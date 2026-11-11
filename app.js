@@ -134,25 +134,32 @@
       graduados: [],
       custom: []
     },
-    // Los 12 Parámetros Institucionales (P1 a P12) con sus valores por defecto exactos
+    // Los Parámetros Institucionales (P1 a P12 + P_COMISION) con sus valores por defecto exactos
     params: {
-      P1: 'CATEDRA',      // Eliminar CÁTEDRA en duplicados por cátedra extra
-      P2: 'CORREO_ITM',   // Eliminar @correo.itm en duplicados de mismo contrato
-      P3: 'DEJAR_UNO',    // Deduplicación exacta
-      P4: 'EXCLUIR',      // Excluir docentes sin correo (239 en Cátedra)
-      P5: 'EXCLUIR',      // Excluir 19 vacantes sin cédula en Administrativos
-      P6: 'EXCLUIR',      // Excluir vacante temporal s/correo de 71720089
-      P7: 'NO_EXCLUIR',   // No excluir 70382234 ("claudia patricia")
-      P8: 'EXCLUIR',      // Excluir conductor 71611587 sin correo en Rectoría
-      P9: 'CENSO',        // Administrativos: Censo por defecto
-      P10: 'EMPRESA',     // Empleadores: Empresa única por NIT (303) por defecto
-      P11: 'EXCLUIR',     // Graduados: Excluir sin correo (3,276) por defecto
-      P12: 'FORMA_1'      // Estudiantes: Forma 1 por defecto
+      P_COMISION: 'EXCLUIR', // Excluir de Docentes a los 11 administrativos "En comisión" (16 filas)
+      P1: 'CATEDRA',         // Eliminar CÁTEDRA en duplicados por cátedra extra
+      P2: 'CORREO_ITM',      // Eliminar @correo.itm en duplicados de mismo contrato
+      P3: 'DEJAR_UNO',       // Deduplicación exacta
+      P4: 'EXCLUIR',         // Excluir docentes sin correo (239 en Cátedra)
+      P5: 'EXCLUIR',         // Excluir 19 vacantes sin cédula en Administrativos
+      P6: 'EXCLUIR',         // Excluir vacante temporal s/correo de 71720089
+      P7: 'NO_EXCLUIR',      // No excluir 70382234 ("claudia patricia")
+      P8: 'NO_EXCLUIR',      // No excluir conductor 71611587 sin correo en Rectoría (acuerdo reunión)
+      P9: 'MUESTREO',        // Administrativos: MAE por Nivel Jerárquico por defecto (acuerdo reunión)
+      P10: 'EMPRESA',        // Empleadores: Empresa única por NIT (303) por defecto
+      P11: 'EXCLUIR',        // Graduados: Excluir sin correo (3.276) por defecto
+      P12: 'FORMA_1'         // Estudiantes: Forma 1 por defecto
     },
     activeEstamento: 'estudiantes',
     activeTab: 'tab-muestreo',
     onlyLinkedStudentsForma2: true,
-    forma2Scope: 'LINKED_ALL', // LINKED_ALL (29,280) | LINKED_MA (23,898) | ALL_29904 (29,904)
+    forma2Scope: 'LINKED_ALL', // LINKED_ALL (29.280) | LINKED_MA (23.898) | ALL_29904 (29.904)
+
+    // Filtro de elegibilidad por Promedio Mínimo en Estudiantes (post-cálculo de n_h)
+    studentGpaFilter: {
+      minGpa: 2.0,
+      zeroRule: 'STRICT_WITH_FALLBACK' // STRICT_WITH_FALLBACK | INCLUDE_ZERO | STRICT_PURE
+    },
 
     // Configuración de muestreo por estamento
     samplingConfig: {
@@ -237,10 +244,12 @@
 
   function formatNumber(n, decimals = 0) {
     if (n === null || n === undefined || Number.isNaN(Number(n))) return '--';
-    return Number(n).toLocaleString('es-CO', {
-      minimumFractionDigits: decimals,
-      maximumFractionDigits: decimals
-    });
+    const num = Number(n);
+    const sign = num < 0 ? '-' : '';
+    const absFixed = Math.abs(num).toFixed(decimals);
+    const parts = absFixed.split('.');
+    const intFormatted = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+    return decimals > 0 ? `${sign}${intFormatted},${parts[1]}` : `${sign}${intFormatted}`;
   }
 
   // --------------------------------------------------------------------------
@@ -313,7 +322,7 @@
   function applyParameterizationRules() {
     const P = STATE.params;
 
-    // 1. ESTUDIANTES (P12: Forma 1 [29,904] vs Forma 2 [29,280 o 23,898])
+    // 1. ESTUDIANTES (P12: Forma 1 [29.904] vs Forma 2 [29.280 o 23.898])
     let estList = STATE.rawDatasets.estudiantes;
     if (P.P12 === 'FORMA_2') {
       if (STATE.forma2Scope === 'LINKED_MA') {
@@ -321,14 +330,19 @@
       } else if (STATE.forma2Scope === 'LINKED_ALL') {
         estList = estList.filter((r) => r.enlazado === 1);
       }
-      // Si es ALL_29904 conserva los 29,904
+      // Si es ALL_29904 conserva los 29.904
     }
     STATE.filteredDatasets.estudiantes = estList;
 
-    // 2. DOCENTES (P1, P2, P3, P4)
+    // 2. DOCENTES (P_COMISION, P1, P2, P3, P4)
     let docList = STATE.rawDatasets.docentes.slice();
 
-    // P1: Docentes duplicados con dos tipos distintos de contrato (78 docentes / 156 registros)
+    // P_COMISION: Administrativos en situación "En comisión" (11 directivos = 16 registros en Profesores.xlsx)
+    if (P.P_COMISION === 'EXCLUIR') {
+      docList = docList.filter((r) => !r.en_comision_admin);
+    }
+
+    // P1: Docentes duplicados con dos tipos distintos de contrato (Carrera/Ocasional + Cátedra extra)
     if (P.P1 === 'OTRO') {
       // Eliminar el registro de CARRERA / OCASIONAL y dejar CÁTEDRA
       docList = docList.filter((r) => !(r.dup_distinto_contrato && r.tipo_contrato_raw !== 'CÁTEDRA'));
@@ -374,7 +388,7 @@
         ? STATE.rawDatasets.empleadores.empresas
         : STATE.rawDatasets.empleadores.jefes;
 
-    // 5. GRADUADOS (P11: Excluir sin correo = 3,276 vs No excluir = 45,154)
+    // 5. GRADUADOS (P11: Excluir sin correo = 3.276 vs No excluir = 45.154)
     STATE.filteredDatasets.graduados =
       P.P11 === 'EXCLUIR'
         ? STATE.rawDatasets.graduados.filter((r) => r.tiene_correo)
@@ -644,6 +658,10 @@
     let totalFinalN = 0;
     let totalBaseN = 0;
 
+    const isEstudiantes = estamentoKey === 'estudiantes';
+    const minGpa = isEstudiantes ? Number(STATE.studentGpaFilter.minGpa) || 0 : 0;
+    const zeroRule = isEstudiantes ? STATE.studentGpaFilter.zeroRule : 'STRICT_WITH_FALLBACK';
+
     strata.forEach((st) => {
       const weightAlloc =
         activeDesign === 'NEYMAN' && sumNhSh > 0
@@ -659,6 +677,42 @@
 
       st.n0h = baseH;
       st.nh = finalH;
+
+      // Evaluar subconjunto elegible por Promedio >= minGpa en Estudiantes
+      if (isEstudiantes && minGpa > 0) {
+        const recsGeC = st.records.filter((r) => Number(r.promedio) >= minGpa);
+        const recsZero = st.records.filter((r) => Number(r.promedio) === 0);
+        const recsLowPos = st.records.filter((r) => Number(r.promedio) > 0 && Number(r.promedio) < minGpa);
+
+        st.NhGpaGeC = recsGeC.length;
+        st.NhGpaZero = recsZero.length;
+        st.NhGpaLowPos = recsLowPos.length;
+        st.strictViable = recsGeC.length >= finalH;
+        st.strictDeficit = Math.max(0, finalH - recsGeC.length);
+
+        if (zeroRule === 'INCLUDE_ZERO') {
+          st.eligibleRecords = [...recsGeC, ...recsZero];
+          st.NhEligible = st.eligibleRecords.length;
+        } else if (zeroRule === 'STRICT_PURE') {
+          st.eligibleRecords = recsGeC;
+          st.NhEligible = recsGeC.length;
+        } else {
+          // STRICT_WITH_FALLBACK: Prioriza Promedio >= c; si hay déficit en el estrato, completa con Promedio = 0.0
+          st.recsGeC = recsGeC;
+          st.recsZero = recsZero;
+          st.eligibleRecords = recsGeC.length >= finalH ? recsGeC : [...recsGeC, ...recsZero];
+          st.NhEligible = recsGeC.length;
+        }
+      } else {
+        st.NhGpaGeC = st.Nh;
+        st.NhGpaZero = 0;
+        st.NhGpaLowPos = 0;
+        st.strictViable = true;
+        st.strictDeficit = 0;
+        st.eligibleRecords = st.records;
+        st.NhEligible = st.Nh;
+      }
+
       st.fh = (finalH / st.Nh) * 100.0;
       st.expansionFactor = finalH > 0 ? st.Nh / finalH : 1.0;
 
@@ -679,7 +733,9 @@
       e,
       p,
       tnr,
-      fpc
+      fpc,
+      minGpa,
+      zeroRule
     };
   }
 
@@ -694,10 +750,30 @@
 
     const selectedAll = [];
     let globalOrder = 1;
+    const isEst = STATE.activeEstamento === 'estudiantes';
+    const minGpa = isEst ? Number(STATE.studentGpaFilter.minGpa) || 0 : 0;
+    const zeroRule = isEst ? STATE.studentGpaFilter.zeroRule : 'STRICT_WITH_FALLBACK';
 
     STATE.currentResult.strata.forEach((st) => {
-      const picked = sampleWithoutReplacement(st.records, st.nh, prng);
-      const pi_h = st.Nh > 0 ? st.nh / st.Nh : 1;
+      let picked = [];
+      if (isEst && minGpa > 0) {
+        if (zeroRule === 'STRICT_WITH_FALLBACK') {
+          const primary = sampleWithoutReplacement(st.recsGeC || [], st.nh, prng);
+          if (primary.length < st.nh && st.recsZero && st.recsZero.length > 0) {
+            const needed = st.nh - primary.length;
+            const fallback = sampleWithoutReplacement(st.recsZero, needed, prng);
+            picked = [...primary, ...fallback];
+          } else {
+            picked = primary;
+          }
+        } else {
+          picked = sampleWithoutReplacement(st.eligibleRecords || st.records, st.nh, prng);
+        }
+      } else {
+        picked = sampleWithoutReplacement(st.records, st.nh, prng);
+      }
+
+      const pi_h = st.Nh > 0 ? picked.length / st.Nh : 1;
       const weight_h = pi_h > 0 ? 1 / pi_h : 1;
 
       picked.forEach((rec) => {
@@ -918,20 +994,21 @@
 
     // Etiquetas de estado en tarjetas superiores
     const nEst = (STATE.filteredDatasets.estudiantes || []).length;
+    const minGpa = Number(STATE.studentGpaFilter.minGpa) || 0;
     document.getElementById('tagParamEstudiantes').textContent =
-      STATE.params.P12 === 'FORMA_1' ? 'P12: Forma 1' : 'P12: Forma 2';
+      `${STATE.params.P12 === 'FORMA_1' ? 'Forma 1' : 'Forma 2'}${minGpa > 0 ? ` · Prom ≥ ${minGpa.toFixed(1)}` : ''}`;
     const footEst = document.getElementById('footEstudiantes');
     if (footEst) {
       footEst.textContent =
         STATE.params.P12 === 'FORMA_1'
-          ? 'Estudiantes.xlsx (N = 29,904) · 22 estratos'
+          ? `Estudiantes.xlsx (N = 29.904) · ${minGpa > 0 ? `Sorteo Prom ≥ ${minGpa.toFixed(1)}` : 'Sin filtro Prom.'}`
           : `Estudiantes_Enriquecido.xlsx (N = ${formatNumber(nEst)})`;
     }
 
     document.getElementById('tagParamDocentes').textContent =
-      `P1:${STATE.params.P1 === 'CATEDRA' ? '-Cát' : STATE.params.P1} · P4:${STATE.params.P4 === 'EXCLUIR' ? 'Con Correo' : 'Todos'}`;
+      `${STATE.params.P_COMISION === 'EXCLUIR' ? 'Sin Comisión' : 'Con Comisión'} · ${STATE.params.P4 === 'EXCLUIR' ? 'Con Correo' : 'Todos'}`;
     document.getElementById('tagParamAdministrativos').textContent =
-      `P9: ${STATE.params.P9}`;
+      `P9: ${STATE.params.P9 === 'MUESTREO' ? 'MAE Jerárquico' : 'Censo'}`;
     document.getElementById('tagParamEmpleadores').textContent =
       `P10: ${STATE.params.P10 === 'EMPRESA' ? 'Empresa (303)' : 'Jefe (531)'}`;
     document.getElementById('tagParamGraduados').textContent =
@@ -947,7 +1024,7 @@
     }
     const admImpact = document.getElementById('modalGroupImpactAdmin');
     if (admImpact) {
-      admImpact.textContent = `Marco resultante: ${formatNumber(STATE.filteredDatasets.administrativos.length)} administrativos (${STATE.params.P9})`;
+      admImpact.textContent = `Marco resultante: ${formatNumber(STATE.filteredDatasets.administrativos.length)} administrativos (${STATE.params.P9 === 'MUESTREO' ? 'MAE por Nivel Jerárquico' : 'Censo'})`;
     }
     const empImpact = document.getElementById('modalGroupImpactEmpleadores');
     if (empImpact) {
@@ -1096,18 +1173,22 @@
 
     if (estKey === 'estudiantes') {
       const nEst = (STATE.filteredDatasets.estudiantes || []).length;
+      const minGpa = Number(STATE.studentGpaFilter.minGpa) || 0;
+      const gpaNote = minGpa > 0
+        ? ` · <strong>Sorteo post-cálculo:</strong> Elegibles con <code>Promedio ≥ ${minGpa.toFixed(1)}</code>`
+        : ' · <strong>Sorteo post-cálculo:</strong> Sin filtro de promedio mínimo';
       desc.innerHTML =
         P.P12 === 'FORMA_1'
-          ? `<strong>P12 = Forma 1 Activa (Prioritaria):</strong> Base oficial <code>Estudiantes.xlsx</code> (<strong>N = 29,904</strong> estudiantes) estratificada por <code>Facultad × Nivel Agrupado (Tecnológico, Universitario, Posgrado) × Modalidad</code>.`
-          : `<strong>P12 = Forma 2 Activa (Base Enriquecida):</strong> Archivo <code>Estudiantes_Enriquecido.xlsx</code> con <strong>N = ${formatNumber(nEst)} estudiantes enlazados</strong> (ΔN = ${formatNumber(nEst - 29904)} respecto a Forma 1) y selección libre de variables.`;
+          ? `<strong>P12 = Forma 1 Activa (Prioritaria):</strong> Base oficial <code>Estudiantes.xlsx</code> (<strong>N = 29.904</strong> estudiantes) estratificada por <code>${(STATE.selectedVarsByEstamento.estudiantes || []).join(' × ')}</code>${gpaNote}.`
+          : `<strong>P12 = Forma 2 Activa (Base Enriquecida):</strong> Archivo <code>Estudiantes_Enriquecido.xlsx</code> con <strong>N = ${formatNumber(nEst)} estudiantes enlazados</strong> (ΔN = ${formatNumber(nEst - 29904)} respecto a Forma 1)${gpaNote}.`;
     } else if (estKey === 'docentes') {
-      desc.innerHTML = `<strong>Reglas P1–P4 Activas:</strong> P1 (Duplicados cátedra extra = <code>${P.P1}</code>) · P2 (Mismo contrato = <code>${P.P2}</code>) · P3 (Deduplicación exacta) · P4 (239 sin correo en Cátedra = <code>${P.P4}</code>) · Estratificación única: <code>Tipo de Vinculación</code> → <strong>N = ${formatNumber(STATE.filteredDatasets.docentes.length)} docentes</strong>.`;
+      desc.innerHTML = `<strong>Reglas en Docentes Activas:</strong> En Comisión Admin = <code>${P.P_COMISION === 'EXCLUIR' ? 'Excluidos (-11 directivos = -16 filas)' : 'Incluidos'}</code> · P1 (Duplicados cátedra extra = <code>${P.P1}</code>) · P4 (239 sin correo en Cátedra = <code>${P.P4}</code>) · Estratificación única: <code>Tipo de Vinculación</code> → <strong>N = ${formatNumber(STATE.filteredDatasets.docentes.length)} docentes</strong>.`;
     } else if (estKey === 'administrativos') {
-      desc.innerHTML = `<strong>Reglas P5–P9 Activas:</strong> P5 (19 sin cédula = <code>${P.P5}</code>) · P6 (Vacante 71720089 = <code>${P.P6}</code>) · P7 (70382234 = <code>${P.P7}</code>) · P8 (Conductor 71611587 = <code>${P.P8}</code>) · P9 (Estrategia = <code>${P.P9}</code>) · Estratificación única: <code>Nivel Jerárquico</code> → <strong>N = ${formatNumber(STATE.filteredDatasets.administrativos.length)} funcionarios</strong>.`;
+      desc.innerHTML = `<strong>Reglas P5–P9 Activas:</strong> P5 (19 sin cédula = <code>${P.P5}</code>) · P6 (Vacante 71720089 = <code>${P.P6}</code>) · P7 (70382234 = <code>${P.P7}</code>) · P8 (Conductor 71611587 = <code>${P.P8}</code>) · P9 (Estrategia = <code>${P.P9 === 'MUESTREO' ? 'MAE por Nivel Jerárquico' : 'Censo'}</code>) → <strong>N = ${formatNumber(STATE.filteredDatasets.administrativos.length)} funcionarios</strong>.`;
     } else if (estKey === 'empleadores') {
       desc.innerHTML = `<strong>Regla P10 Activa:</strong> Unidad estadística de muestreo = <code>${P.P10 === 'EMPRESA' ? 'Empresa única por NIT (N = 303)' : 'Jefe / Contacto directo (N = 531)'}</code> · Sin variables de estratificación (Muestreo Aleatorio Simple Sin Reemplazo).`;
     } else if (estKey === 'graduados') {
-      desc.innerHTML = `<strong>Regla P11 Activa:</strong> Graduados sin correo electrónico = <code>${P.P11 === 'EXCLUIR' ? 'Excluir (Marco contactable con correo: N = 3,276)' : 'No Excluir (Marco histórico total: N = 45,154)'}</code>.`;
+      desc.innerHTML = `<strong>Regla P11 Activa:</strong> Graduados sin correo electrónico = <code>${P.P11 === 'EXCLUIR' ? 'Excluir (Marco contactable con correo: N = 3.276)' : 'No Excluir (Marco histórico total: N = 45.154)'}</code>.`;
     } else {
       desc.innerHTML = `<strong>Dataset Propio Cargado:</strong> ${formatNumber(STATE.filteredDatasets.custom.length)} registros activos en memoria local.`;
     }
@@ -1147,10 +1228,90 @@
     }
   }
 
+  function renderStudentGpaViabilityStrip(res) {
+    const strip = document.getElementById('gpaViabilitySummaryStrip');
+    if (!strip || !res || STATE.activeEstamento !== 'estudiantes') return;
+
+    const minGpa = Number(STATE.studentGpaFilter.minGpa) || 0;
+    const zeroRule = STATE.studentGpaFilter.zeroRule;
+
+    const totalGeC = res.strata.reduce((acc, s) => acc + (s.NhGpaGeC ?? s.Nh), 0);
+    const totalZero = res.strata.reduce((acc, s) => acc + (s.NhGpaZero ?? 0), 0);
+    const totalLowPos = res.strata.reduce((acc, s) => acc + (s.NhGpaLowPos ?? 0), 0);
+
+    const deficitStrata = res.strata.filter((s) => !s.strictViable);
+    const viableCount = res.H - deficitStrata.length;
+
+    if (minGpa <= 0) {
+      strip.className = 'gpa-viability-strip viable-ok';
+      strip.innerHTML = `
+        <div class="gpa-metrics-inline">
+          <span><strong>✅ Filtro de Promedio Desactivado ($c = 0.0$):</strong> Los <strong>${formatNumber(res.N)} estudiantes</strong> son elegibles para el sorteo en los <strong>${res.H} estratos</strong> ($n = ${formatNumber(res.nFinal)}$).</span>
+        </div>
+      `;
+      return;
+    }
+
+    const pctGeC = res.N > 0 ? ((totalGeC / res.N) * 100).toFixed(2).replace('.', ',') : '0,00';
+    const pctZero = res.N > 0 ? ((totalZero / res.N) * 100).toFixed(2).replace('.', ',') : '0,00';
+    const pctLow = res.N > 0 ? ((totalLowPos / res.N) * 100).toFixed(2).replace('.', ',') : '0,00';
+
+    if (deficitStrata.length === 0) {
+      strip.className = 'gpa-viability-strip viable-ok';
+      strip.innerHTML = `
+        <div class="gpa-metrics-inline">
+          <span class="gpa-metric-pill"><strong>Población cálculo $n_h$:</strong> ${formatNumber(res.N)}</span>
+          <span class="gpa-metric-pill"><strong>Cumplen Prom. ≥ ${minGpa.toFixed(1)}:</strong> ${formatNumber(totalGeC)} (${pctGeC}%)</span>
+          <span class="gpa-metric-pill"><strong>Con 0 &lt; Prom. &lt; ${minGpa.toFixed(1)}:</strong> ${formatNumber(totalLowPos)} (${pctLow}%)</span>
+          <span class="gpa-metric-pill"><strong>Con Prom. = 0.0:</strong> ${formatNumber(totalZero)} (${pctZero}%)</span>
+        </div>
+        <div>
+          <strong>✅ Viabilidad 100% Completa:</strong> Los <strong>${res.H} estratos</strong> tienen suficientes estudiantes con <code>Promedio ≥ ${minGpa.toFixed(1)}</code> ($N_h(\\ge ${minGpa.toFixed(1)}) \\ge n_h$) para sortear las <strong>${formatNumber(res.nFinal)} unidades</strong>.
+        </div>
+      `;
+    } else {
+      strip.className = 'gpa-viability-strip viable-warn';
+      const defListHtml = deficitStrata
+        .map(
+          (d) =>
+            `<code>${d.code} (${d.name})</code>: $N_h = ${formatNumber(d.Nh)}$, <strong>$N_h(\\ge ${minGpa.toFixed(1)}) = ${formatNumber(d.NhGpaGeC)}$</strong> vs. $n_h = ${formatNumber(d.nh)}$ (tiene ${formatNumber(d.NhGpaZero)} con <code>Prom = 0.0</code>)`
+        )
+        .join(' · ');
+
+      const ruleActionText =
+        zeroRule === 'STRICT_PURE'
+          ? `⚠️ Como elegiste <em>Estricto puro</em>, esos <strong>${deficitStrata.length} estratos</strong> quedan con déficit y la muestra sorteada se reduce en ${deficitStrata.reduce((a, b) => a + b.strictDeficit, 0)} unidades.`
+          : `✅ Con la regla activa (<em>${zeroRule === 'STRICT_WITH_FALLBACK' ? 'Suplir déficit con Prom = 0.0' : 'Conservar Prom = 0.0'}</em>), se completan las cuotas $n_h$ en esos ${deficitStrata.length} estratos usando sus estudiantes con <code>Promedio = 0.0</code> (1er semestre/posgrado sin promedio acumulado aún).`;
+
+      strip.innerHTML = `
+        <div class="gpa-metrics-inline">
+          <span class="gpa-metric-pill"><strong>Población cálculo $n_h$:</strong> ${formatNumber(res.N)}</span>
+          <span class="gpa-metric-pill"><strong>Cumplen Prom. ≥ ${minGpa.toFixed(1)}:</strong> ${formatNumber(totalGeC)} (${pctGeC}%)</span>
+          <span class="gpa-metric-pill"><strong>Con 0 &lt; Prom. &lt; ${minGpa.toFixed(1)}:</strong> ${formatNumber(totalLowPos)} (${pctLow}%)</span>
+          <span class="gpa-metric-pill"><strong>Con Prom. = 0.0 (nuevos/posgrado):</strong> ${formatNumber(totalZero)} (${pctZero}%)</span>
+        </div>
+        <div>
+          <strong>⚠️ Hallazgo de Viabilidad en Estratos:</strong> <strong>${viableCount} de ${res.H} estratos</strong> tienen suficientes estudiantes con <code>Promedio ≥ ${minGpa.toFixed(1)}</code>, pero <strong>${deficitStrata.length} estratos tienen $N_h(\\ge ${minGpa.toFixed(1)}) &lt; n_h$</strong>: ${defListHtml}.<br/>
+          ${ruleActionText}
+        </div>
+      `;
+    }
+  }
+
   function renderStrataAllocationTable(res) {
     const tbody = document.getElementById('tbodyStrataAllocation');
     const tfoot = document.getElementById('tfootStrataAllocation');
+    const thElig = document.getElementById('thEligibleGpaCol');
     const searchTerm = (document.getElementById('inputSearchStrata').value || '').toLowerCase().trim();
+
+    const isEst = STATE.activeEstamento === 'estudiantes';
+    const minGpa = isEst ? Number(STATE.studentGpaFilter.minGpa) || 0 : 0;
+
+    if (thElig) {
+      thElig.textContent = isEst && minGpa > 0
+        ? `Elegibles Prom ≥ ${minGpa.toFixed(1)}`
+        : 'Elegibles Sorteo';
+    }
 
     const filteredStrata = res.strata.filter(
       (s) =>
@@ -1160,8 +1321,16 @@
     );
 
     tbody.innerHTML = filteredStrata
-      .map(
-        (st) => `
+      .map((st) => {
+        let eligCellHtml = `${formatNumber(st.Nh)}`;
+        if (isEst && minGpa > 0) {
+          if (st.strictViable) {
+            eligCellHtml = `<span class="badge-pill badge-emerald" title="Suficientes con Promedio ≥ ${minGpa.toFixed(1)}: ${formatNumber(st.NhGpaGeC)} ≥ n_h (${formatNumber(st.nh)})">✅ ${formatNumber(st.NhGpaGeC)}</span>`;
+          } else {
+            eligCellHtml = `<span class="badge-pill badge-amber" title="Déficit estricto: ${formatNumber(st.NhGpaGeC)} con Prom ≥ ${minGpa.toFixed(1)} (hay ${formatNumber(st.NhGpaZero)} con Prom = 0.0)">⚠️ ${formatNumber(st.NhGpaGeC)} <small>(+${formatNumber(st.NhGpaZero)} en 0.0)</small></span>`;
+          }
+        }
+        return `
       <tr>
         <td class="num-col">${st.index}</td>
         <td><span class="badge-pill badge-navy">${st.code}</span></td>
@@ -1172,15 +1341,17 @@
         <td class="num-col">${st.Sh.toFixed(4)}</td>
         <td class="num-col">${formatNumber(st.n0h)}</td>
         <td class="num-col"><strong class="highlight-teal">${formatNumber(st.nh)}</strong></td>
+        <td class="num-col">${eligCellHtml}</td>
         <td class="num-col">${st.fh.toFixed(2)}%</td>
         <td class="num-col">${st.expansionFactor.toFixed(2)}</td>
       </tr>
-    `
-      )
+    `;
+      })
       .join('');
 
     const globalFh = res.N > 0 ? ((res.nFinal / res.N) * 100).toFixed(2) : '0.00';
     const globalExp = res.nFinal > 0 ? (res.N / res.nFinal).toFixed(2) : '1.00';
+    const totalGeC = res.strata.reduce((acc, s) => acc + (s.NhGpaGeC ?? s.Nh), 0);
 
     tfoot.innerHTML = `
       <tr>
@@ -1191,6 +1362,7 @@
         <td class="num-col">--</td>
         <td class="num-col">${formatNumber(res.nNet)}</td>
         <td class="num-col">${formatNumber(res.nFinal)}</td>
+        <td class="num-col">${formatNumber(totalGeC)}</td>
         <td class="num-col">${globalFh}%</td>
         <td class="num-col">${globalExp}</td>
       </tr>
@@ -1479,9 +1651,9 @@
         });
 
         let rulesText = '';
-        if (k === 'estudiantes') rulesText = `P12: ${STATE.params.P12}`;
-        if (k === 'docentes') rulesText = `P1:${STATE.params.P1}, P4:${STATE.params.P4}`;
-        if (k === 'administrativos') rulesText = `P5-P8 Depurados, P9:${STATE.params.P9}`;
+        if (k === 'estudiantes') rulesText = `P12: ${STATE.params.P12}${STATE.studentGpaFilter.minGpa > 0 ? ` (Prom≥${STATE.studentGpaFilter.minGpa.toFixed(1)})` : ''}`;
+        if (k === 'docentes') rulesText = `Comisión:${STATE.params.P_COMISION}, P1:${STATE.params.P1}, P4:${STATE.params.P4}`;
+        if (k === 'administrativos') rulesText = `P5-P7, P8:${STATE.params.P8}, P9:${STATE.params.P9}`;
         if (k === 'empleadores') rulesText = `P10: ${STATE.params.P10}`;
         if (k === 'graduados') rulesText = `P11: ${STATE.params.P11}`;
 
@@ -1571,7 +1743,7 @@
       }
       if (pillEl) {
         pillEl.innerHTML = isF1
-          ? `Base Activa: <strong>Estudiantes.xlsx (N = 29,904)</strong>`
+          ? `Base Activa: <strong>Estudiantes.xlsx (N = 29.904)</strong>`
           : `Base Activa: <strong>Estudiantes_Enriquecido.xlsx (N = ${formatNumber(res.N)} | ΔN = ${formatNumber(res.N - 29904)})</strong>`;
       }
       if (diffBanner) {
@@ -1583,13 +1755,14 @@
       }
       if (diffN) {
         diffN.textContent = isF1
-          ? '29,904 estudiantes (100% del archivo original)'
+          ? '29.904 estudiantes (100% del archivo original)'
           : `${formatNumber(res.N)} estudiantes (${res.N - 29904 === 0 ? 'Todos' : formatNumber(res.N - 29904) + ' sin cruce histórico excluidos'})`;
       }
       if (diffVars) {
         const activeVarNames = (STATE.selectedVarsByEstamento.estudiantes || []).join(' × ') || 'Sin estratificar (MAS)';
         diffVars.textContent = `${activeVarNames} (H = ${res.H} estratos | Muestra n = ${formatNumber(res.nFinal)})`;
       }
+      renderStudentGpaViabilityStrip(res);
     }
 
     // Actualizar KPIs principales con animación de destello cuando cambia N o n
@@ -1884,6 +2057,7 @@
 
   function resetParamsToDefaults() {
     STATE.params = {
+      P_COMISION: 'EXCLUIR',
       P1: 'CATEDRA',
       P2: 'CORREO_ITM',
       P3: 'DEJAR_UNO',
@@ -1891,13 +2065,24 @@
       P5: 'EXCLUIR',
       P6: 'EXCLUIR',
       P7: 'NO_EXCLUIR',
-      P8: 'EXCLUIR',
-      P9: 'CENSO',
+      P8: 'NO_EXCLUIR',
+      P9: 'MUESTREO',
       P10: 'EMPRESA',
       P11: 'EXCLUIR',
       P12: 'FORMA_1'
     };
     STATE.forma2Scope = 'LINKED_ALL';
+    STATE.studentGpaFilter.minGpa = 2.0;
+    STATE.studentGpaFilter.zeroRule = 'STRICT_WITH_FALLBACK';
+    const inpGpa = document.getElementById('inputMinGpaThreshold');
+    const rngGpa = document.getElementById('rangeMinGpaThreshold');
+    const selZero = document.getElementById('selectGpaZeroRule');
+    if (inpGpa) inpGpa.value = '2.0';
+    if (rngGpa) rngGpa.value = '2.0';
+    if (selZero) selZero.value = 'STRICT_WITH_FALLBACK';
+    document.querySelectorAll('.btn-preset-gpa').forEach((b) => {
+      b.classList.toggle('active', Math.abs(Number(b.getAttribute('data-gpa')) - 2.0) < 0.05);
+    });
     STATE.selectedVarsByEstamento.estudiantes = ESTAMENTO_META.estudiantes.defaultVarsForma1.slice();
     STATE.selectedVarsByEstamento.docentes = ['tipo_vinculacion'];
     STATE.selectedVarsByEstamento.administrativos = ['nivel_jerarquico'];
@@ -1910,7 +2095,7 @@
 
     const feedbackEl = document.getElementById('modalLiveFeedbackText');
     if (feedbackEl) {
-      feedbackEl.textContent = '↺ Restaurados los 12 valores por defecto institucionales';
+      feedbackEl.textContent = '↺ Restaurados los valores por defecto institucionales';
     }
   }
 
@@ -1959,6 +2144,36 @@
       scopeSel.addEventListener('change', (e) => {
         STATE.forma2Scope = e.target.value;
         applyParameterizationRules();
+        runMainCalculationAndRender();
+      });
+    }
+
+    // Controles del Filtro de Promedio Mínimo en Estudiantes (cambiables en cualquier momento)
+    const syncMinGpa = (val) => {
+      const clean = Math.min(4.5, Math.max(0.0, Number(val) || 0.0));
+      STATE.studentGpaFilter.minGpa = clean;
+      const inp = document.getElementById('inputMinGpaThreshold');
+      const rng = document.getElementById('rangeMinGpaThreshold');
+      if (inp) inp.value = clean.toFixed(1);
+      if (rng) rng.value = Math.min(4.0, clean);
+      document.querySelectorAll('.btn-preset-gpa').forEach((b) => {
+        b.classList.toggle('active', Math.abs(Number(b.getAttribute('data-gpa')) - clean) < 0.05);
+      });
+      updateModalAndRibbonCounts();
+      runMainCalculationAndRender();
+    };
+
+    const inpGpa = document.getElementById('inputMinGpaThreshold');
+    const rngGpa = document.getElementById('rangeMinGpaThreshold');
+    const selZeroGpa = document.getElementById('selectGpaZeroRule');
+    if (inpGpa) inpGpa.addEventListener('change', (e) => syncMinGpa(e.target.value));
+    if (rngGpa) rngGpa.addEventListener('input', (e) => syncMinGpa(e.target.value));
+    document.querySelectorAll('.btn-preset-gpa').forEach((btn) => {
+      btn.addEventListener('click', () => syncMinGpa(btn.getAttribute('data-gpa')));
+    });
+    if (selZeroGpa) {
+      selZeroGpa.addEventListener('change', (e) => {
+        STATE.studentGpaFilter.zeroRule = e.target.value;
         runMainCalculationAndRender();
       });
     }

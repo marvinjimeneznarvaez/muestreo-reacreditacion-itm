@@ -1885,6 +1885,131 @@ code {
 }
 
 /* ==========================================================================
+   9B. PANEL DE FILTRO DE PROMEDIO MÍNIMO PARA SORTEO EN ESTUDIANTES
+   ========================================================================== */
+.student-gpa-filter-box {
+  margin-top: 12px;
+  padding: 14px 18px;
+  background: #ffffff;
+  border: 1.5px solid #cbd5e1;
+  border-left: 5px solid var(--sci-teal);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-sm);
+}
+
+.gpa-filter-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 20px;
+  flex-wrap: wrap;
+}
+
+.gpa-header-left {
+  flex: 1 1 480px;
+}
+
+.gpa-header-left h4 {
+  font-family: var(--font-display);
+  font-size: 14.5px;
+  font-weight: 700;
+  color: var(--itm-navy-dark);
+  margin: 5px 0 4px;
+}
+
+.gpa-header-left p {
+  font-size: 12.5px;
+  color: var(--text-secondary);
+  line-height: 1.45;
+  margin: 0;
+}
+
+.gpa-header-controls {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+  flex-wrap: wrap;
+  background: #f8fafc;
+  padding: 10px 14px;
+  border: 1px solid #e2e8f0;
+  border-radius: var(--radius-sm);
+}
+
+.gpa-control-item {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.gpa-input-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.btn-preset-gpa {
+  padding: 4px 8px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 600;
+  background: #ffffff;
+  color: var(--text-secondary);
+  border: 1px solid var(--border-light);
+  border-radius: 5px;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.btn-preset-gpa:hover {
+  border-color: var(--sci-teal);
+  color: var(--sci-teal);
+}
+
+.btn-preset-gpa.active {
+  background: var(--itm-navy);
+  color: #ffffff;
+  border-color: var(--itm-navy);
+}
+
+.gpa-viability-strip {
+  margin-top: 12px;
+  padding: 10px 14px;
+  border-radius: var(--radius-sm);
+  font-size: 12.5px;
+  line-height: 1.5;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.gpa-viability-strip.viable-ok {
+  background: #ecfdf5;
+  border: 1px solid #6ee7b7;
+  color: #065f46;
+}
+
+.gpa-viability-strip.viable-warn {
+  background: #fffbeb;
+  border: 1px solid #fcd34d;
+  color: #92400e;
+}
+
+.gpa-metrics-inline {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14px;
+  align-items: center;
+}
+
+.gpa-metric-pill {
+  background: rgba(255, 255, 255, 0.85);
+  padding: 3px 9px;
+  border-radius: 6px;
+  border: 1px solid rgba(15, 23, 42, 0.1);
+  font-size: 12px;
+}
+
+/* ==========================================================================
    10. RESPONSIVE BREAKPOINTS
    ========================================================================== */
 @media (max-width: 1280px) {
