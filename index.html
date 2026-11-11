@@ -327,27 +327,6 @@
                   <button type="button" class="btn-preset-gpa" data-gpa="3.0">≥ 3.0</button>
                 </div>
               </div>
-
-              <div class="gpa-control-item gpa-zero-rule-item">
-                <span class="control-label">¿Qué hacer con los estudiantes que tienen promedio 0.0? <span class="gpa-zero-count" id="gpaZeroCountLabel">—</span></span>
-                <p class="gpa-zero-explainer">
-                  Un promedio de 0.0 <strong>no indica bajo rendimiento</strong>: lo más probable es que sean estudiantes nuevos o de posgrado que aún no tienen promedio acumulado registrado (conviene confirmarlo con Admisiones y Registro). Por eso se tratan aparte de los que tienen promedio bajo (entre 0 y $c$), que sí se excluyen del sorteo.
-                </p>
-                <div class="gpa-zero-options" role="radiogroup">
-                  <label class="gpa-zero-option">
-                    <input type="radio" name="gpaZeroRule" value="STRICT_WITH_FALLBACK" checked />
-                    <span><strong>Usarlos solo para completar (recomendado).</strong> Se sortea primero entre quienes tienen promedio ≥ $c$. Solo si en un estrato no alcanzan, se completa con estudiantes de promedio 0.0 de ese mismo estrato.</span>
-                  </label>
-                  <label class="gpa-zero-option">
-                    <input type="radio" name="gpaZeroRule" value="INCLUDE_ZERO" />
-                    <span><strong>Incluirlos siempre.</strong> En todos los estratos se sortea entre quienes tienen promedio ≥ $c$ y quienes tienen promedio 0.0, con la misma probabilidad.</span>
-                  </label>
-                  <label class="gpa-zero-option">
-                    <input type="radio" name="gpaZeroRule" value="STRICT_PURE" />
-                    <span><strong>No usarlos nunca.</strong> Solo participan los de promedio ≥ $c$. Si en un estrato no alcanzan, ese estrato queda con menos encuestados de los requeridos.</span>
-                  </label>
-                </div>
-              </div>
             </div>
           </div>
 

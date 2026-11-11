@@ -1251,19 +1251,12 @@
     if (!strip || !res || STATE.activeEstamento !== 'estudiantes') return;
 
     const minGpa = Number(STATE.studentGpaFilter.minGpa) || 0;
-    const zeroRule = STATE.studentGpaFilter.zeroRule;
     const cTxt = minGpa.toFixed(1);
 
     const totalGeC = res.strata.reduce((acc, s) => acc + (s.NhGpaGeC ?? s.Nh), 0);
     const totalZero = res.strata.reduce((acc, s) => acc + (s.NhGpaZero ?? 0), 0);
     const totalLowPos = res.strata.reduce((acc, s) => acc + (s.NhGpaLowPos ?? 0), 0);
     const pct = (x) => (res.N > 0 ? ((x / res.N) * 100).toFixed(2) : '0.00');
-
-    // Conteo dinámico de estudiantes con Promedio = 0.0 en la explicación de la regla
-    const zeroCountEl = document.getElementById('gpaZeroCountLabel');
-    if (zeroCountEl) {
-      zeroCountEl.textContent = minGpa > 0 ? `${formatNumber(totalZero)} estudiantes (${pct(totalZero)}%)` : '—';
-    }
 
     if (minGpa <= 0) {
       strip.className = 'gpa-viability-strip viable-ok';
@@ -1273,42 +1266,17 @@
       return;
     }
 
-    // Resultado por estrato según la regla elegida para Promedio = 0.0
-    let totalFaltantes = 0;
-    let totalCompletadosConCero = 0;
+    let totalDeficitUnits = 0;
     const rows = res.strata.map((s) => {
       const ge = s.NhGpaGeC ?? 0;
       const zero = s.NhGpaZero ?? 0;
       const low = s.NhGpaLowPos ?? 0;
       const alcanzaGe = ge >= s.nh;
-      let usaCero = 0;
-      let faltan = 0;
-      let accion = '';
+      const dif = ge - s.nh;
+      if (!alcanzaGe) totalDeficitUnits += (s.nh - ge);
 
-      if (alcanzaGe) {
-        accion = `Se sortean los ${formatNumber(s.nh)} entre los ${formatNumber(ge)} con promedio ≥ ${cTxt}`;
-      } else if (zeroRule === 'STRICT_PURE') {
-        faltan = s.nh - ge;
-        accion = `Solo hay ${formatNumber(ge)}: el estrato queda con <strong>${formatNumber(faltan)}</strong> encuestado(s) menos`;
-      } else if (zeroRule === 'INCLUDE_ZERO') {
-        const disp = ge + zero;
-        faltan = Math.max(0, s.nh - disp);
-        usaCero = Math.min(zero, s.nh - ge);
-        accion = faltan > 0
-          ? `Ni sumando los de promedio 0.0 alcanza: faltan <strong>${formatNumber(faltan)}</strong>`
-          : `Se sortea entre los ${formatNumber(disp)} con promedio ≥ ${cTxt} o igual a 0.0`;
-      } else {
-        usaCero = Math.min(zero, s.nh - ge);
-        faltan = Math.max(0, s.nh - ge - usaCero);
-        accion = `Se toman ${formatNumber(ge)} con promedio ≥ ${cTxt} y se completan <strong>${formatNumber(usaCero)}</strong> con promedio 0.0`
-          + (faltan > 0 ? `; aún faltan <strong>${formatNumber(faltan)}</strong>` : '');
-      }
-      if (!alcanzaGe) totalCompletadosConCero += usaCero;
-      totalFaltantes += faltan;
-
-      const completo = faltan === 0;
       return `
-        <tr class="${alcanzaGe ? '' : completo ? 'row-gpa-fallback' : 'row-gpa-deficit'}">
+        <tr class="${alcanzaGe ? '' : 'row-gpa-deficit'}">
           <td class="num-col">${s.index}</td>
           <td>${s.name}</td>
           <td class="num-col">${formatNumber(s.Nh)}</td>
@@ -1317,7 +1285,7 @@
           <td class="num-col">${formatNumber(low)}</td>
           <td class="num-col">${formatNumber(zero)}</td>
           <td class="center-col">${alcanzaGe ? '<span class="gpa-yes">Sí</span>' : '<span class="gpa-no">No</span>'}</td>
-          <td>${accion}</td>
+          <td class="num-col">${alcanzaGe ? `+${formatNumber(dif)} disponibles` : `<strong style="color:#9f1239;">Faltan ${formatNumber(s.nh - ge)}</strong>`}</td>
         </tr>`;
     });
 
@@ -1327,24 +1295,19 @@
     let headline;
     if (deficitCount === 0) {
       strip.className = 'gpa-viability-strip viable-ok';
-      headline = `<strong>Los ${res.H} estratos tienen suficientes estudiantes con promedio ≥ ${cTxt}</strong> para sortear la muestra completa de ${formatNumber(res.nFinal)} estudiantes.`;
+      headline = `<strong>Viabilidad completa (${res.H} de ${res.H} estratos):</strong> Todos los estratos cuentan con suficientes estudiantes con $\\text{Promedio} \\ge ${cTxt}$ para extraer la muestra de <strong>${formatNumber(res.nFinal)}</strong> estudiantes.`;
     } else {
-      strip.className = totalFaltantes > 0 ? 'gpa-viability-strip viable-bad' : 'gpa-viability-strip viable-warn';
-      const reglaTxt = totalFaltantes > 0
-        ? `Con la opción elegida, la muestra queda incompleta: <strong>faltan ${formatNumber(totalFaltantes)} estudiante(s)</strong>.`
-        : zeroRule === 'INCLUDE_ZERO'
-          ? `Con la opción elegida (incluir siempre a los de promedio 0.0), esos estratos sí alcanzan, y en todos los estratos los de promedio 0.0 también pueden ser sorteados. La muestra queda completa.`
-          : `Con la opción elegida se completan usando <strong>${formatNumber(totalCompletadosConCero)} estudiante(s) con promedio 0.0</strong>, así que la muestra queda completa.`;
-      headline = `<strong>${viableCount} de ${res.H} estratos</strong> tienen suficientes estudiantes con promedio ≥ ${cTxt}. En <strong>${deficitCount}</strong> (filas resaltadas) no alcanzan. ${reglaTxt}`;
+      strip.className = 'gpa-viability-strip viable-warn';
+      headline = `<strong>Diagnóstico de viabilidad por estrato ($\\text{Promedio} \\ge ${cTxt}$):</strong> <strong>${viableCount} de ${res.H} estratos</strong> tienen suficientes estudiantes ($N_h(\\text{Prom.} \\ge ${cTxt}) \\ge n_h$). En <strong>${deficitCount} estratos</strong> (filas resaltadas) no alcanzan los estudiantes con $\\text{Promedio} \\ge ${cTxt}$ (faltan en total <strong>${formatNumber(totalDeficitUnits)}</strong> unidades).`;
     }
 
     strip.innerHTML = `
       <p class="gpa-viab-headline">${headline}</p>
       <div class="gpa-viab-legend">
-        <span><strong>Población total</strong> usada para calcular los $n_h$: ${formatNumber(res.N)}</span>
-        <span>Promedio ≥ ${cTxt}: ${formatNumber(totalGeC)} (${pct(totalGeC)}%)</span>
-        <span>Promedio entre 0 y ${cTxt}: ${formatNumber(totalLowPos)} (${pct(totalLowPos)}%)</span>
-        <span>Promedio = 0.0: ${formatNumber(totalZero)} (${pct(totalZero)}%)</span>
+        <span><strong>Población total ($N$):</strong> ${formatNumber(res.N)}</span>
+        <span><strong>Con $\\text{Promedio} \\ge ${cTxt}$:</strong> ${formatNumber(totalGeC)} (${pct(totalGeC)}%)</span>
+        <span><strong>Con $0 &lt; \\text{Promedio} &lt; ${cTxt}$:</strong> ${formatNumber(totalLowPos)} (${pct(totalLowPos)}%)</span>
+        <span><strong>Con $\\text{Promedio} = 0.0$:</strong> ${formatNumber(totalZero)} (${pct(totalZero)}%)</span>
       </div>
       <div class="gpa-viab-table-wrap">
         <table class="gpa-viab-table">
@@ -1352,13 +1315,13 @@
             <tr>
               <th class="num-col">#</th>
               <th>Estrato</th>
-              <th class="num-col">Estudiantes en el estrato<br/><span class="th-sym">$N_h$</span></th>
+              <th class="num-col">Población del estrato<br/><span class="th-sym">$N_h$</span></th>
               <th class="num-col">Muestra requerida<br/><span class="th-sym">$n_h$</span></th>
-              <th class="num-col">Con promedio ≥ ${cTxt}<br/><span class="th-sym">$N_h(\\text{Prom.} \\ge ${cTxt})$</span></th>
-              <th class="num-col">Con promedio entre 0 y ${cTxt}<br/><span class="th-sym">$N_h(0 < \\text{Prom.} < ${cTxt})$</span></th>
-              <th class="num-col">Con promedio 0.0<br/><span class="th-sym">$N_h(\\text{Prom.} = 0)$</span></th>
-              <th class="center-col">¿Alcanzan los de promedio ≥ ${cTxt}?<br/><span class="th-sym">$N_h(\\text{Prom.} \\ge ${cTxt}) \\ge n_h$</span></th>
-              <th>Qué se hace en el sorteo</th>
+              <th class="num-col">Cumplen filtro<br/><span class="th-sym">$N_h(\\text{Prom.} \\ge ${cTxt})$</span></th>
+              <th class="num-col">Promedio bajo positivo<br/><span class="th-sym">$N_h(0 &lt; \\text{Prom.} &lt; ${cTxt})$</span></th>
+              <th class="num-col">Promedio en cero<br/><span class="th-sym">$N_h(\\text{Prom.} = 0.0)$</span></th>
+              <th class="center-col">¿Alcanza?<br/><span class="th-sym">$N_h(\\text{Prom.} \\ge ${cTxt}) \\ge n_h$</span></th>
+              <th class="num-col">Holgura / Déficit<br/><span class="th-sym">$N_h(\\text{Prom.} \\ge ${cTxt}) - n_h$</span></th>
             </tr>
           </thead>
           <tbody>${rows.join('')}</tbody>
@@ -1372,7 +1335,7 @@
               <td class="num-col"><strong>${formatNumber(totalLowPos)}</strong></td>
               <td class="num-col"><strong>${formatNumber(totalZero)}</strong></td>
               <td class="center-col"><strong>${viableCount} / ${res.H}</strong></td>
-              <td>${totalFaltantes > 0 ? `Faltan ${formatNumber(totalFaltantes)}` : 'Muestra completa'}</td>
+              <td class="num-col"><strong>${totalDeficitUnits > 0 ? `Déficit en ${deficitCount} estratos (-${formatNumber(totalDeficitUnits)})` : 'Sin déficit'}</strong></td>
             </tr>
           </tfoot>
         </table>
