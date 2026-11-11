@@ -1,0 +1,1307 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SIMER-ITM | Sistema Interactivo de Muestreo Estadístico — Reacreditación Institucional ITM</title>
+  <meta name="description" content="Sistema Interactivo de Muestreo Estadístico para la Reacreditación Institucional del Instituto Tecnológico Metropolitano (ITM) — Medellín, Colombia." />
+
+  <!-- Tipografía Editorial e Institucional -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap" rel="stylesheet" />
+
+  <!-- KaTeX para Notación Matemática Científica -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css" crossorigin="anonymous" />
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js" crossorigin="anonymous"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js" crossorigin="anonymous"></script>
+
+  <!-- Plotly.js para Visualizaciones Estadísticas Interactivas -->
+  <script src="https://cdn.plot.ly/plotly-2.32.0.min.js" charset="utf-8"></script>
+
+  <!-- SheetJS para Carga y Exportación Nativa de Archivos Excel (.xlsx) y CSV -->
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+
+  <!-- Hoja de Estilos Institucional Luminosa -->
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+
+  <!-- =====================================================================
+       ENCABEZADO INSTITUCIONAL SUPERIOR (HERO & BARRA DE NAVEGACIÓN)
+       ===================================================================== -->
+  <header class="itm-header">
+    <div class="header-container">
+      <div class="brand-block">
+        <div class="logo-wrapper">
+          <img src="assets/logo_itm.png" alt="Escudo ITM" class="itm-logo" onerror="this.style.display='none'" />
+        </div>
+        <div class="brand-text">
+          <div class="brand-badges">
+            <span class="badge-pill badge-navy">REACREDITACIÓN INSTITUCIONAL DE ALTA CALIDAD</span>
+            <span class="badge-pill badge-teal">ACUERDO 01 DE 2025 CESU · CNA</span>
+            <span class="badge-pill badge-emerald">HABEAS DATA SHA-256</span>
+          </div>
+          <h1 class="app-title">
+            <span class="title-acronym">SIMER-ITM</span>
+            <span class="title-divider">—</span>
+            <span class="title-full">Sistema Interactivo de Muestreo Estadístico para la Reacreditación Institucional</span>
+          </h1>
+          <p class="executive-recipients">
+            <strong>Destinatarios Ejecutivos:</strong> PhD. Hernán Salazar <span class="role-muted">(Vicerrector de Docencia — Líder del Proceso)</span>
+            &nbsp;·&nbsp; Alexandra Montoya <span class="role-muted">(Directora de Gestión Académica)</span>
+          </p>
+        </div>
+      </div>
+
+      <div class="header-actions">
+        <button id="btnOpenParamsModal" class="btn-param-trigger" title="Configurar los 12 parámetros institucionales de depuración de marcos muestrales (P1 a P12)">
+          <span class="btn-icon">⚙️</span>
+          <div class="btn-text-group">
+            <span class="btn-label-main">Parametrización Inicial (P1–P12)</span>
+            <span class="btn-label-sub" id="paramActiveSummaryBadge">12 Reglas Oficiales Activas</span>
+          </div>
+        </button>
+      </div>
+    </div>
+
+    <!-- Barra de Pestañas Principales -->
+    <nav class="main-nav-tabs" aria-label="Navegación Principal SIMER-ITM">
+      <div class="nav-container">
+        <button class="nav-tab active" data-tab="tab-muestreo">
+          <span class="tab-icon">🎯</span>
+          <span>1. Diseño, Estratificación y Sorteo Muestral</span>
+        </button>
+        <button class="nav-tab" data-tab="tab-bifasico">
+          <span class="tab-icon">🔄</span>
+          <span>2. Muestra Preliminar ($n_{\text{inicial}}$) vs. Definitiva ($n_{\text{final}} - n_{\text{inicial}}$)</span>
+        </button>
+        <button class="nav-tab" data-tab="tab-global">
+          <span class="tab-icon">📊</span>
+          <span>3. Matriz Global (5 Estamentos) &amp; Auditoría 6 Nov vs. 9 Nov</span>
+        </button>
+        <button class="nav-tab" data-tab="tab-matematica">
+          <span class="tab-icon">📐</span>
+          <span>4. Marco Matemático y Estadístico ($\KaTeX$)</span>
+        </button>
+        <button class="nav-tab" data-tab="tab-custom">
+          <span class="tab-icon">📂</span>
+          <span>5. Cargar Dataset Propio (.xlsx / .csv)</span>
+        </button>
+      </div>
+    </nav>
+  </header>
+
+  <!-- =====================================================================
+       CONTENEDOR PRINCIPAL DE TRABAJO
+       ===================================================================== -->
+  <main class="main-workspace">
+
+    <!-- Cinta Resumen de Marcos Muestrales Efectivos (Actualizada en Tiempo Real por P1-P12) -->
+    <section class="population-ribbon" aria-label="Selector Rápido de Estamento y Población Efectiva">
+      <div class="ribbon-header">
+        <div class="ribbon-title-group">
+          <span class="ribbon-eyebrow">SELECCIÓN DE ESTAMENTO OBJETIVO (CLIC PARA ANALIZAR)</span>
+          <span class="ribbon-hint">Los tamaños poblacionales efectivos $N$ se recalculan automáticamente según las decisiones de <strong>Parametrización Inicial (P1–P12)</strong>.</span>
+        </div>
+        <div class="ribbon-actions">
+          <button id="btnQuickResetDefaults" class="btn-ghost-sm" title="Restaurar parámetros P1-P12 a sus valores por defecto institucionales">
+            ↺ Restaurar P1–P12 por defecto
+          </button>
+        </div>
+      </div>
+
+      <div class="estamento-cards-grid" id="estamentoCardsGrid">
+        <!-- Tarjeta 1: Estudiantes -->
+        <div class="estamento-card active" data-estamento="estudiantes">
+          <div class="est-card-top">
+            <span class="est-badge est-badge-navy">ESTAMENTO 1 · PRIORIDAD</span>
+            <span class="est-param-tag" id="tagParamEstudiantes">P12: Forma 1</span>
+          </div>
+          <div class="est-card-body">
+            <h3 class="est-name">🎓 Estudiantes</h3>
+            <div class="est-metrics">
+              <div class="est-metric-main">
+                <span class="metric-label">Marco Efectivo $N$</span>
+                <span class="metric-value" id="ribbonN_estudiantes">29,904</span>
+              </div>
+              <div class="est-metric-sample">
+                <span class="metric-label">Muestra $n$</span>
+                <span class="metric-value highlight-teal" id="ribbonSample_estudiantes">--</span>
+              </div>
+            </div>
+            <p class="est-card-foot" id="footEstudiantes">Pregrado y Posgrado · 22 estratos (Forma 1)</p>
+          </div>
+        </div>
+
+        <!-- Tarjeta 2: Docentes -->
+        <div class="estamento-card" data-estamento="docentes">
+          <div class="est-card-top">
+            <span class="est-badge est-badge-teal">ESTAMENTO 2</span>
+            <span class="est-param-tag" id="tagParamDocentes">P1–P4 Activos</span>
+          </div>
+          <div class="est-card-body">
+            <h3 class="est-name">👨‍🏫 Docentes / Profesores</h3>
+            <div class="est-metrics">
+              <div class="est-metric-main">
+                <span class="metric-label">Marco Efectivo $N$</span>
+                <span class="metric-value" id="ribbonN_docentes">1,462</span>
+              </div>
+              <div class="est-metric-sample">
+                <span class="metric-label">Muestra $n$</span>
+                <span class="metric-value highlight-teal" id="ribbonSample_docentes">--</span>
+              </div>
+            </div>
+            <p class="est-card-foot" id="footDocentes">Carrera, Ocasionales y Cátedra</p>
+          </div>
+        </div>
+
+        <!-- Tarjeta 3: Administrativos -->
+        <div class="estamento-card" data-estamento="administrativos">
+          <div class="est-card-top">
+            <span class="est-badge est-badge-emerald">ESTAMENTO 3</span>
+            <span class="est-param-tag" id="tagParamAdministrativos">P5–P9: Censo</span>
+          </div>
+          <div class="est-card-body">
+            <h3 class="est-name">🏛️ Administrativos</h3>
+            <div class="est-metrics">
+              <div class="est-metric-main">
+                <span class="metric-label">Marco Efectivo $N$</span>
+                <span class="metric-value" id="ribbonN_administrativos">211</span>
+              </div>
+              <div class="est-metric-sample">
+                <span class="metric-label">Muestra $n$</span>
+                <span class="metric-value highlight-emerald" id="ribbonSample_administrativos">211</span>
+              </div>
+            </div>
+            <p class="est-card-foot" id="footAdministrativos">Rectoría (8) + Administrativos (203)</p>
+          </div>
+        </div>
+
+        <!-- Tarjeta 4: Empleadores -->
+        <div class="estamento-card" data-estamento="empleadores">
+          <div class="est-card-top">
+            <span class="est-badge est-badge-amber">ESTAMENTO 4</span>
+            <span class="est-param-tag" id="tagParamEmpleadores">P10: Empresa</span>
+          </div>
+          <div class="est-card-body">
+            <h3 class="est-name">🏢 Empleadores</h3>
+            <div class="est-metrics">
+              <div class="est-metric-main">
+                <span class="metric-label">Marco Efectivo $N$</span>
+                <span class="metric-value" id="ribbonN_empleadores">303</span>
+              </div>
+              <div class="est-metric-sample">
+                <span class="metric-label">Muestra $n$</span>
+                <span class="metric-value highlight-amber" id="ribbonSample_empleadores">--</span>
+              </div>
+            </div>
+            <p class="est-card-foot" id="footEmpleadores">303 Empresas (NIT) · 531 Jefes</p>
+          </div>
+        </div>
+
+        <!-- Tarjeta 5: Graduados -->
+        <div class="estamento-card" data-estamento="graduados">
+          <div class="est-card-top">
+            <span class="est-badge est-badge-indigo">ESTAMENTO 5</span>
+            <span class="est-param-tag" id="tagParamGraduados">P11: Con Correo</span>
+          </div>
+          <div class="est-card-body">
+            <h3 class="est-name">🎖️ Graduados / Egresados</h3>
+            <div class="est-metrics">
+              <div class="est-metric-main">
+                <span class="metric-label">Marco Efectivo $N$</span>
+                <span class="metric-value" id="ribbonN_graduados">3,276</span>
+              </div>
+              <div class="est-metric-sample">
+                <span class="metric-label">Muestra $n$</span>
+                <span class="metric-value highlight-indigo" id="ribbonSample_graduados">--</span>
+              </div>
+            </div>
+            <p class="est-card-foot" id="footGraduados">3,276 con correo (de 45,154 únicos)</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===================================================================
+         PESTAÑA 1: DISEÑO, ESTRATIFICACIÓN Y SORTEO MUESTRAL POR ESTAMENTO
+         =================================================================== -->
+    <section id="tab-muestreo" class="tab-panel active">
+
+      <!-- Banner Contextual de Reglas P1-P12 Aplicadas al Estamento Activo -->
+      <div class="context-rules-banner" id="activeEstamentoRulesBanner">
+        <div class="context-rules-left">
+          <span class="context-pill" id="contextEstamentoPill">ESTUDIANTES</span>
+          <div class="context-rules-text" id="contextRulesDescription">
+            Cargando parametrización activa del estamento...
+          </div>
+        </div>
+        <div class="context-rules-right">
+          <button class="btn-outline-sm" onclick="window.SIMER_APP.openParamsModal()">
+            ⚙️ Modificar Reglas P1–P12
+          </button>
+        </div>
+      </div>
+
+      <!-- PANEL ESPECIAL DE PRIORIDAD PARA ESTUDIANTES: SELECTOR FORMA 1 vs FORMA 2 (P12) -->
+      <div id="studentFormaPanel" class="student-forma-container">
+        <div class="forma-header">
+          <div>
+            <span class="section-eyebrow">PARÁMETRO P12 · ARQUITECTURA DE ESTRATIFICACIÓN EN ESTUDIANTES</span>
+            <h2 class="section-title-sm">Selección de Estrategia de Estratificación para Estudiantes ($N = 29,904$)</h2>
+          </div>
+          <span class="forma-link-badge">Enlace Histórico Consolidado: <strong>29,280 / 29,904 (97.91%)</strong></span>
+        </div>
+
+        <div class="forma-cards-row">
+          <label class="forma-option-card active" id="cardForma1">
+            <input type="radio" name="radioP12Forma" value="FORMA_1" checked />
+            <div class="forma-card-content">
+              <div class="forma-card-title-row">
+                <span class="forma-tag-default">★ FORMA 1 (POR DEFECTO PRIORITARIA)</span>
+                <span class="forma-n-badge">$N = 29,904$ (100% cobertura)</span>
+              </div>
+              <h4>Facultad $\times$ Nivel Agrupado (Tecnológico, Universitario, Posgrado) $\times$ Modalidad</h4>
+              <p>
+                Utiliza directamente la base oficial <code>Estudiantes.xlsx</code> agrupando <em>Especialización</em>, <em>Maestría</em> y <em>Doctorado</em> en un único nivel <strong>Posgrado</strong> ($1,069$ estudiantes), eliminando micro-estratos extremos y conformando $H = 22$ estratos altamente estables.
+              </p>
+            </div>
+          </label>
+
+          <label class="forma-option-card" id="cardForma2">
+            <input type="radio" name="radioP12Forma" value="FORMA_2" />
+            <div class="forma-card-content">
+              <div class="forma-card-title-row">
+                <span class="forma-tag-alt">🔬 FORMA 2 (EXPLORACIÓN MULTIVARIADA &amp; ENRIQUECIDA)</span>
+                <span class="forma-n-badge"><code>Estudiantes_Enriquecido.xlsx</code></span>
+              </div>
+              <h4>Escoger Otras Variables Categóricas o Cuantitativas para Estudiar Estratificación</h4>
+              <p>
+                Habilita las variables demográficas y académicas cruzadas con <code>Matriculados/</code>, <code>Inscritos/</code> y <code>Admitidos/</code>: <strong>Sexo</strong>, <strong>Estrato Socioeconómico</strong>, <strong>Ciclo Formativo / Semestre</strong>, <strong>Sede/Lugar</strong>, y variables cuantitativas (<strong>Promedio Acumulado</strong>, <strong>Edad</strong>, <strong>% Avance</strong>) con discretización óptima de Dalenius-Hodges.
+              </p>
+            </div>
+          </label>
+        </div>
+      </div>
+
+      <!-- GRILLA DE CONTROLES ESTADÍSTICOS Y CONFIGURACIÓN DE ESTRATIFICACIÓN -->
+      <div class="workspace-two-col">
+
+        <!-- COLUMNA IZQUIERDA: PARÁMETROS DEL MOTOR ESTADÍSTICO Y VARIABLES DE ESTRATIFICACIÓN -->
+        <aside class="control-sidebar">
+
+          <!-- Bloque A: Especificación del Diseño Muestral -->
+          <div class="card-panel">
+            <div class="card-panel-header">
+              <span class="panel-step-badge">1</span>
+              <div>
+                <h3 class="panel-title">Diseño y Parámetros de Inferencia</h3>
+                <p class="panel-subtitle">Fórmulas exactas en poblaciones finitas con FPC</p>
+              </div>
+            </div>
+
+            <div class="control-group">
+              <label for="selectSamplingDesign" class="control-label">
+                <span>Estrategia de Muestreo / Afijación</span>
+              </label>
+              <select id="selectSamplingDesign" class="form-select">
+                <option value="PROPORCIONAL" selected>MAE — Afijación Proporcional (w_h = N_h / N)</option>
+                <option value="NEYMAN">MAE — Afijación Óptima de Neyman (w_h ∝ N_h · S_h)</option>
+                <option value="MAS">MAS — Muestreo Aleatorio Simple Sin Reemplazo</option>
+                <option value="CENSO">Censo Institucional Completo (n = N)</option>
+              </select>
+            </div>
+
+            <!-- Selector de Nivel de Confianza (90% a 99% paso 1%) -->
+            <div class="control-group">
+              <div class="label-row">
+                <label for="rangeConfidence" class="control-label">Nivel de Confianza ($1 - \alpha$)</label>
+                <span class="value-chip chip-navy" id="valConfidenceDisplay">95% ($Z = 1.9600$)</span>
+              </div>
+              <input type="range" id="rangeConfidence" class="form-range" min="90" max="99" step="1" value="95" />
+              <div class="range-ticks">
+                <span>90%</span>
+                <span>92%</span>
+                <span>95%</span>
+                <span>97%</span>
+                <span>99%</span>
+              </div>
+            </div>
+
+            <!-- Selector de Margen de Error (1.0% a 10.0% paso 0.1%) -->
+            <div class="control-group">
+              <div class="label-row">
+                <label for="rangeMarginError" class="control-label">Margen de Error Admisible ($e$)</label>
+                <div class="inline-number-input">
+                  <input type="number" id="inputMarginError" class="form-number-sm" min="1.0" max="10.0" step="0.1" value="5.0" />
+                  <span class="unit-symbol">%</span>
+                </div>
+              </div>
+              <input type="range" id="rangeMarginError" class="form-range" min="1.0" max="10.0" step="0.1" value="5.0" />
+              <div class="preset-buttons-row">
+                <button type="button" class="btn-preset" data-error="2.5">2.5%</button>
+                <button type="button" class="btn-preset" data-error="3.0">3.0% (Est.)</button>
+                <button type="button" class="btn-preset" data-error="3.5">3.5%</button>
+                <button type="button" class="btn-preset active" data-error="5.0">5.0% (CNA)</button>
+                <button type="button" class="btn-preset" data-error="7.0">7.0%</button>
+              </div>
+            </div>
+
+            <!-- Proporción Esperada p y Tasa de No Respuesta TNR -->
+            <div class="control-row-two">
+              <div class="control-group">
+                <div class="label-row">
+                  <label for="inputPropP" class="control-label">Proporción $p$</label>
+                  <span class="value-chip chip-slate" id="valPropPDisplay">0.50</span>
+                </div>
+                <input type="number" id="inputPropP" class="form-input" min="0.05" max="0.95" step="0.05" value="0.50" />
+                <span class="control-help">Máx. varianza $p=0.50$</span>
+              </div>
+
+              <div class="control-group">
+                <div class="label-row">
+                  <label for="inputTNR" class="control-label">No Respuesta ($\text{TNR}$)</label>
+                  <span class="value-chip chip-amber" id="valTNRDisplay">0%</span>
+                </div>
+                <input type="number" id="inputTNR" class="form-input" min="0" max="50" step="5" value="0" />
+                <span class="control-help">$n_{\text{adj}} = \lceil n / (1 - \text{TNR}) \rceil$</span>
+              </div>
+            </div>
+
+            <div class="control-group">
+              <label class="checkbox-row">
+                <input type="checkbox" id="checkMicroStrataCensus" checked />
+                <span>Aplicar <strong>Censo Automático ($n_h = N_h$)</strong> en micro-estratos con $N_h \le 5$</span>
+              </label>
+            </div>
+          </div>
+
+          <!-- Bloque B: Selección de Variables de Estratificación -->
+          <div class="card-panel">
+            <div class="card-panel-header">
+              <span class="panel-step-badge">2</span>
+              <div>
+                <h3 class="panel-title">Variables de Estratificación</h3>
+                <p class="panel-subtitle" id="stratVarsSubtitle">Selecciona 1, 2 o 3 variables para construir los estratos</p>
+              </div>
+            </div>
+
+            <!-- Filtro de Enlazados en Forma 2 de Estudiantes -->
+            <div id="forma2FilterBox" class="forma2-filter-box hidden">
+              <label class="checkbox-row">
+                <input type="checkbox" id="checkOnlyLinkedStudents" />
+                <span>Filtrar solo los <strong>29,280 estudiantes enlazados (97.91%)</strong> con historial completo en <code>Matriculados/Inscritos/Admitidos</code></span>
+              </label>
+            </div>
+
+            <div id="stratVariablesChecklist" class="variables-checklist">
+              <!-- Generado dinámicamente según el estamento activo -->
+            </div>
+
+            <!-- PANEL DE DISCRETIZACIÓN ÓPTIMA PARA VARIABLES CUANTITATIVAS -->
+            <div id="quantDiscretizationPanel" class="quant-panel hidden">
+              <div class="quant-panel-header">
+                <span class="quant-badge">📈 VARIABLE CUANTITATIVA DETECTADA</span>
+                <h4 id="quantVarTitle">Discretización Estadística de Variable Continua</h4>
+              </div>
+
+              <div class="control-group">
+                <label for="selectQuantVarActive" class="control-label">Variable cuantitativa a configurar:</label>
+                <select id="selectQuantVarActive" class="form-select"></select>
+              </div>
+
+              <div class="control-group">
+                <label for="selectQuantMethod" class="control-label">Método de Construcción de Intervalos (Cortes):</label>
+                <select id="selectQuantMethod" class="form-select">
+                  <option value="DALENIUS" selected>Automático Óptimo: Regla de Dalenius-Hodges (acum √f)</option>
+                  <option value="QUANTILES">Automático: Cuantiles Empíricos (Terciles / Cuartiles / Quintiles)</option>
+                  <option value="EQUAL_WIDTH">Automático: Amplitud Igual / Sturges</option>
+                  <option value="CUSTOM">Personalizado: Puntos de corte definidos por el usuario</option>
+                </select>
+              </div>
+
+              <div id="quantNumBinsGroup" class="control-group">
+                <div class="label-row">
+                  <label for="selectQuantBins" class="control-label">Número de Estratos Cuantitativos ($L$):</label>
+                  <span class="value-chip chip-teal" id="valQuantBinsChip">L = 3 intervalos</span>
+                </div>
+                <select id="selectQuantBins" class="form-select">
+                  <option value="2">L = 2 estratos (Bajo / Alto)</option>
+                  <option value="3" selected>L = 3 estratos (Bajo / Medio / Alto)</option>
+                  <option value="4">L = 4 estratos (Cuartiles / Niveles 1 a 4)</option>
+                  <option value="5">L = 5 estratos (Quintiles / Niveles 1 a 5)</option>
+                </select>
+              </div>
+
+              <div id="quantCustomCutsGroup" class="control-group hidden">
+                <label for="inputCustomCuts" class="control-label">Puntos de corte manuales (separados por coma):</label>
+                <div class="custom-cuts-input-row">
+                  <input type="text" id="inputCustomCuts" class="form-input" placeholder="Ej: 3.0, 3.8, 4.3" value="3.0, 3.8, 4.3" />
+                  <button type="button" id="btnApplyCustomCuts" class="btn-primary-sm">Aplicar</button>
+                </div>
+                <span class="control-help">Ejemplo en Promedio: <code>3.0, 3.8, 4.3</code> genera $(0, 3.0], (3.0, 3.8], (3.8, 4.3], >4.3$.</span>
+              </div>
+
+              <div class="control-group">
+                <label class="checkbox-row">
+                  <input type="checkbox" id="checkSeparateZeroQuant" checked />
+                  <span>Separar valores $= 0$ (ej. estudiantes nuevos sin promedio acumulado $0.0$) en un estrato propio</span>
+                </label>
+              </div>
+
+              <div class="quant-cuts-summary" id="quantCutsSummaryBox">
+                Cortes calculados: --
+              </div>
+            </div>
+          </div>
+
+          <!-- Bloque C: Generador de Sorteo Aleatorio Reproducible y Exportación -->
+          <div class="card-panel highlight-border-teal">
+            <div class="card-panel-header">
+              <span class="panel-step-badge badge-teal-bg">3</span>
+              <div>
+                <h3 class="panel-title">Sorteo Aleatorio y Descarga</h3>
+                <p class="panel-subtitle">Semilla criptográfica reproducible PRNG Mulberry32</p>
+              </div>
+            </div>
+
+            <div class="control-group">
+              <label for="inputRandomSeed" class="control-label">Semilla Institucional de Sorteo (`Seed`):</label>
+              <div class="seed-input-group">
+                <input type="number" id="inputRandomSeed" class="form-input mono-input" value="20261111" />
+                <button type="button" id="btnNewRandomSeed" class="btn-outline-sm" title="Generar nueva semilla aleatoria">🎲</button>
+              </div>
+            </div>
+
+            <button type="button" id="btnRunRandomDraw" class="btn-action-primary">
+              <span>⚡ Ejecutar Sorteo Aleatorio de Muestra ($n$)</span>
+            </button>
+
+            <div class="export-buttons-grid">
+              <button type="button" id="btnExportSampleXLSX" class="btn-export btn-export-xlsx">
+                <span>📗 Exportar Muestra (.xlsx)</span>
+              </button>
+              <button type="button" id="btnExportSampleCSV" class="btn-export btn-export-csv">
+                <span>📄 Exportar Muestra (.csv)</span>
+              </button>
+              <button type="button" id="btnExportStrataTableXLSX" class="btn-export btn-export-full">
+                <span>📊 Descargar Tabla de Afijación por Estrato (.xlsx)</span>
+              </button>
+            </div>
+          </div>
+
+        </aside>
+
+        <!-- COLUMNA DERECHA: KPIs, FÓRMULA DINÁMICA, GRÁFICOS INTERACTIVOS Y TABLAS -->
+        <div class="results-main-column">
+
+          <!-- Fila de KPIs Ejecutivos -->
+          <div class="kpi-cards-grid">
+            <div class="kpi-card kpi-navy">
+              <div class="kpi-top">
+                <span class="kpi-title">POBLACIÓN OBJETIVO ($N$)</span>
+                <span class="kpi-icon">🏛️</span>
+              </div>
+              <div class="kpi-value" id="kpiPopulationN">29,904</div>
+              <div class="kpi-sub" id="kpiPopulationSub">Marco depurado según P1–P12</div>
+            </div>
+
+            <div class="kpi-card kpi-teal">
+              <div class="kpi-top">
+                <span class="kpi-title">MUESTRA NETA ($n_0$)</span>
+                <span class="kpi-icon">🎯</span>
+              </div>
+              <div class="kpi-value" id="kpiSampleNet">380</div>
+              <div class="kpi-sub" id="kpiSampleNetSub">Fracción muestral $f = 1.27\%$</div>
+            </div>
+
+            <div class="kpi-card kpi-emerald">
+              <div class="kpi-top">
+                <span class="kpi-title">MUESTRA FINAL OPERATIVA ($n$)</span>
+                <span class="kpi-icon">✅</span>
+              </div>
+              <div class="kpi-value" id="kpiSampleFinal">380</div>
+              <div class="kpi-sub" id="kpiSampleFinalSub">Ajustada por TNR y micro-estratos</div>
+            </div>
+
+            <div class="kpi-card kpi-indigo">
+              <div class="kpi-top">
+                <span class="kpi-title">ESTRATOS ACTIVOS ($H$)</span>
+                <span class="kpi-icon">🧩</span>
+              </div>
+              <div class="kpi-value" id="kpiStrataCount">22</div>
+              <div class="kpi-sub" id="kpiStrataSub">Factor FPC promedio: 0.9936</div>
+            </div>
+          </div>
+
+          <!-- Tarjeta de Fórmula Matemática en Vivo (KaTeX) -->
+          <div class="card-panel formula-live-Banner">
+            <div class="formula-banner-header">
+              <div>
+                <span class="section-eyebrow">ECUACIÓN EXACTA DE TAMAÑO MUESTRAL Y AFIJACIÓN ACTIVA</span>
+                <h3 class="panel-title" id="liveFormulaTitle">Muestreo Aleatorio Estratificado — Afijación Proporcional</h3>
+              </div>
+              <span class="badge-pill badge-navy" id="liveDesignBadge">Cochran (1977) · Särndal et al. (2003)</span>
+            </div>
+            <div class="formula-math-box" id="liveFormulaMathContainer">
+              <!-- Renderizado dinámico con KaTeX -->
+            </div>
+          </div>
+
+          <!-- Panel de Histograma Interactivo de Discretización Cuantitativa (Visible cuando hay variable cuantitativa activa) -->
+          <div id="quantHistogramCard" class="card-panel hidden">
+            <div class="card-panel-header-flex">
+              <div>
+                <span class="section-eyebrow">OPTIMIZACIÓN DE CORTES DE DALENIUS-HODGES / PERSONALIZADOS</span>
+                <h3 class="panel-title" id="quantHistogramTitle">Distribución Empírica y Puntos de Corte Óptimos</h3>
+              </div>
+              <span class="badge-pill badge-teal" id="quantHistogramBadge">Cortes Activos</span>
+            </div>
+            <div id="plotQuantHistogram" class="plotly-chart-box" style="height: 310px;"></div>
+          </div>
+
+          <!-- Gráficos Interactivos de Distribución Poblacional vs Muestra por Estrato -->
+          <div class="charts-two-grid">
+            <div class="card-panel">
+              <div class="card-panel-header-flex">
+                <div>
+                  <span class="section-eyebrow">DISTRIBUCIÓN POR ESTRATO ($N_h$ vs $n_h$)</span>
+                  <h3 class="panel-title">Comparativa Población vs. Muestra Asignada</h3>
+                </div>
+                <select id="selectChartMetricView" class="form-select-sm">
+                  <option value="SAMPLE_BARS" selected>Tamaño de Muestra (n_h) por Estrato</option>
+                  <option value="POP_VS_SAMPLE">Población (N_h) vs Muestra (n_h) [Escala Log/Dual]</option>
+                  <option value="WEIGHTS">Pesos de Estratificación W_h (%)</option>
+                </select>
+              </div>
+              <div id="plotStrataAllocation" class="plotly-chart-box" style="height: 360px;"></div>
+            </div>
+
+            <div class="card-panel">
+              <div class="card-panel-header-flex">
+                <div>
+                  <span class="section-eyebrow">CURVA DE SENSIBILIDAD MUESTRAL</span>
+                  <h3 class="panel-title">Tamaño de Muestra $n$ según Margen de Error ($e$) y Confianza</h3>
+                </div>
+                <span class="badge-pill badge-indigo">90% · 95% · 99%</span>
+              </div>
+              <div id="plotSensitivityCurve" class="plotly-chart-box" style="height: 360px;"></div>
+            </div>
+          </div>
+
+          <!-- Tabla Completa de Afijación por Estrato -->
+          <div class="card-panel">
+            <div class="card-panel-header-flex">
+              <div>
+                <span class="section-eyebrow">DESGLOSE ESTADÍSTICO EXHAUSTIVO POR ESTRATO ($h = 1, \dots, H$)</span>
+                <h3 class="panel-title">Tabla Oficial de Afijación Muestral, Pesos $W_h$, Varianzas y Factores de Expansión</h3>
+              </div>
+              <div class="table-search-box">
+                <input type="text" id="inputSearchStrata" class="form-input-sm" placeholder="🔍 Filtrar estrato..." />
+              </div>
+            </div>
+
+            <div class="table-responsive">
+              <table class="data-table" id="tableStrataAllocation">
+                <thead>
+                  <tr>
+                    <th>#</th>
+                    <th>Código</th>
+                    <th>Definición del Estrato ($h$)</th>
+                    <th class="num-col">Población $N_h$</th>
+                    <th class="num-col">Peso $W_h$ (%)</th>
+                    <th class="num-col">Prop. $p_h$</th>
+                    <th class="num-col">Desv. $S_h$</th>
+                    <th class="num-col">Muestra Base $n_{0h}$</th>
+                    <th class="num-col">Muestra Final $n_h$</th>
+                    <th class="num-col">Fracción $f_h$ (%)</th>
+                    <th class="num-col">Factor Expansión $F_h$</th>
+                  </tr>
+                </thead>
+                <tbody id="tbodyStrataAllocation">
+                  <!-- Filas generadas dinámicamente -->
+                </tbody>
+                <tfoot id="tfootStrataAllocation">
+                  <!-- Totales consolidados -->
+                </tfoot>
+              </table>
+            </div>
+          </div>
+
+          <!-- Visor de Individuos Seleccionados en la Muestra Aleatoria (Anonimizados SHA-256) -->
+          <div class="card-panel" id="sampleSelectedCard">
+            <div class="card-panel-header-flex">
+              <div>
+                <span class="section-eyebrow">MARCO DE UNIDADES SELECCIONADAS (ANONIMIZACIÓN HABEAS DATA LEY 1581 DE 2012)</span>
+                <h3 class="panel-title">Listado de Individuos Seleccionados en el Sorteo Aleatorio Reproducible</h3>
+              </div>
+              <div class="sample-preview-controls">
+                <span class="badge-pill badge-emerald" id="sampleDrawnStatusBadge">Muestra Lista</span>
+                <input type="text" id="inputSearchSampleRows" class="form-input-sm" placeholder="🔍 Buscar ID, Hash o Estrato..." />
+              </div>
+            </div>
+
+            <div class="table-responsive" style="max-height: 420px; overflow-y: auto;">
+              <table class="data-table" id="tableSelectedIndividuals">
+                <thead>
+                  <tr>
+                    <th># Sorteo</th>
+                    <th>ID Anonimizado</th>
+                    <th>Hash SHA-256 (Salado)</th>
+                    <th>Estrato Asignado ($h$)</th>
+                    <th>Atributos de Estratificación y Control</th>
+                    <th class="num-col">Prob. Inclusión $\pi_i$</th>
+                    <th class="num-col">Peso Muestral $d_i = 1/\pi_i$</th>
+                  </tr>
+                </thead>
+                <tbody id="tbodySelectedIndividuals">
+                  <!-- Primeros 200 registros mostrados en vista previa rápida, 100% exportables a Excel/CSV -->
+                </tbody>
+              </table>
+            </div>
+            <div class="table-footer-note" id="samplePreviewFooterNote">
+              Mostrando vista previa de unidades sorteadas. Usa los botones <strong>Exportar Muestra (.xlsx / .csv)</strong> para descargar la totalidad de registros seleccionados.
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </section>
+
+    <!-- ===================================================================
+         PESTAÑA 2: MUESTRA PRELIMINAR (n_inicial) vs MUESTRA DEFINITIVA (n_final - n_inicial)
+         =================================================================== -->
+    <section id="tab-bifasico" class="tab-panel">
+      <div class="bifasico-hero-card">
+        <div class="bifasico-hero-text">
+          <span class="badge-pill badge-teal">MUESTREO BIFÁSICO DE NEYMAN-STEIN-COX · REACREDITACIÓN ITM</span>
+          <h2>Muestra Preliminar Piloto ($n_{\text{inicial}} \ge 30$) vs. Muestra Definitiva ($n_{\text{final}}$) y Sorteo de Faltantes ($n_{\text{final}} - n_{\text{inicial}}$)</h2>
+          <p>
+            Permite seleccionar una <strong>muestra preliminar piloto ($n_{\text{inicial}}$)</strong> sobre el estamento activo, registrar o simular las proporciones empíricas $\hat{p}_{0h}$ y desviaciones estándar $\hat{S}_h$ observadas por estrato en el piloto, recalcular el tamaño muestral definitivo $n_{\text{final}, h}$ y <strong>sortear exclusivamente los $n_{\text{restante}, h} = \max(0, n_{\text{final}, h} - n_{\text{inicial}, h})$ individuos faltantes</strong> del complemento poblacional $\mathcal{U}_h \setminus \mathcal{S}_{\text{inicial}, h}$ sin repetir a ningún encuestado piloto.
+          </p>
+        </div>
+        <div class="bifasico-formula-pill">
+          $$n_{\text{restante}, h} = \max\!\left(0,\; n_{\text{final}, h} - n_{\text{inicial}, h}\right), \qquad \mathcal{S}_{\text{restante}, h} \subset \mathcal{U}_h \setminus \mathcal{S}_{\text{inicial}, h}$$
+        </div>
+      </div>
+
+      <div class="bifasico-controls-grid">
+        <div class="card-panel">
+          <div class="card-panel-header">
+            <span class="panel-step-badge">Fase 1</span>
+            <div>
+              <h3 class="panel-title">Configuración de Muestra Preliminar ($n_{\text{inicial}}$)</h3>
+              <p class="panel-subtitle">Estamento activo sincronizado con la barra superior</p>
+            </div>
+          </div>
+
+          <div class="control-row-two">
+            <div class="control-group">
+              <label for="inputPilotTotalN" class="control-label">Tamaño Total Muestra Preliminar ($n_{\text{inicial}}$):</label>
+              <input type="number" id="inputPilotTotalN" class="form-input" min="30" max="5000" step="10" value="60" />
+              <span class="control-help">Recomendado: $n_{\text{inicial}} \ge 30$ global o $\ge 5$ por estrato</span>
+            </div>
+
+            <div class="control-group">
+              <label for="selectBifasicoAllocation" class="control-label">Afijación para Muestra Definitiva ($n_{\text{final}}$):</label>
+              <select id="selectBifasicoAllocation" class="form-select">
+                <option value="NEYMAN" selected>Afijación Óptima de Neyman con S_h del Piloto</option>
+                <option value="PROPORCIONAL">Afijación Proporcional con Varianza del Piloto</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="preset-buttons-row" style="margin-top: 10px;">
+            <button type="button" id="btnSimulateRealisticPilot" class="btn-outline-sm">
+              ✨ Simular Proporciones Piloto Realistas ($\hat{p}_{0h} \in [0.65, 0.90]$)
+            </button>
+            <button type="button" id="btnResetConservativePilot" class="btn-outline-sm">
+              🛡️ Fijar Varianza Máxima Conservadora ($\hat{p}_{0h} = 0.50$)
+            </button>
+          </div>
+        </div>
+
+        <div class="card-panel">
+          <div class="card-panel-header">
+            <span class="panel-step-badge badge-teal-bg">Fase 2</span>
+            <div>
+              <h3 class="panel-title">Balance Muestral Bifásico y Descarga de Individuos Restantes</h3>
+              <p class="panel-subtitle">Garantía matemática $\mathcal{S}_{\text{inicial}} \cap \mathcal{S}_{\text{restante}} = \emptyset$</p>
+            </div>
+          </div>
+
+          <div class="bifasico-kpis-row">
+            <div class="mini-kpi">
+              <span class="mini-kpi-label">Muestra Preliminar ($n_{\text{inicial}}$)</span>
+              <span class="mini-kpi-val" id="kpiBifasicoInicial">60</span>
+            </div>
+            <div class="mini-kpi">
+              <span class="mini-kpi-label">Muestra Definitiva ($n_{\text{final}}$)</span>
+              <span class="mini-kpi-val highlight-teal" id="kpiBifasicoFinal">320</span>
+            </div>
+            <div class="mini-kpi">
+              <span class="mini-kpi-label">Individuos Faltantes ($n_{\text{final}} - n_{\text{inicial}}$)</span>
+              <span class="mini-kpi-val highlight-emerald" id="kpiBifasicoRestante">260</span>
+            </div>
+          </div>
+
+          <div class="export-buttons-grid" style="margin-top: 12px;">
+            <button type="button" id="btnDrawBifasicoSamples" class="btn-action-primary">
+              ⚡ Sortear Muestra Preliminar ($n_{\text{inicial}}$) + Restante ($n_{\text{final}} - n_{\text{inicial}}$)
+            </button>
+            <button type="button" id="btnExportBifasicoXLSX" class="btn-export btn-export-xlsx">
+              📗 Descargar Excel Bifásico (Hojas: Preliminar, Restante y Consolidada)
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Tabla Editable de Estratos para Muestreo Bifásico -->
+      <div class="card-panel" style="margin-top: 20px;">
+        <div class="card-panel-header-flex">
+          <div>
+            <span class="section-eyebrow">EDICIÓN EN VIVO DE PROPORCIONES PILOTO OBSERVADAS ($\hat{p}_{0h}$) POR ESTRATO</span>
+            <h3 class="panel-title">Cálculo de Muestra Preliminar ($n_{\text{inicial}, h}$), Definitiva ($n_{\text{final}, h}$) y Remanente ($n_{\text{restante}, h}$)</h3>
+          </div>
+          <span class="badge-pill badge-emerald">Edita cualquier $\hat{p}_{0h}$ para recalcular al instante</span>
+        </div>
+
+        <div class="table-responsive">
+          <table class="data-table" id="tableBifasicoStrata">
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>Estrato ($h$)</th>
+                <th class="num-col">Población $N_h$</th>
+                <th class="num-col">Peso $W_h$ (%)</th>
+                <th class="num-col">Muestra Piloto $n_{\text{inicial}, h}$</th>
+                <th class="num-col">Prop. Piloto $\hat{p}_{0h}$ (Editable)</th>
+                <th class="num-col">Cuasi-Desv. $\hat{S}_h$</th>
+                <th class="num-col">Muestra Definitiva $n_{\text{final}, h}$</th>
+                <th class="num-col">Faltantes $n_{\text{restante}, h} = n_{\text{final}, h} - n_{\text{inicial}, h}$</th>
+                <th class="num-col">Estado en Fase 2</th>
+              </tr>
+            </thead>
+            <tbody id="tbodyBifasicoStrata"></tbody>
+            <tfoot id="tfootBifasicoStrata"></tfoot>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===================================================================
+         PESTAÑA 3: MATRIZ GLOBAL (5 ESTAMENTOS) & AUDITORÍA VIERNES 6 NOV vs LUNES 9 NOV
+         =================================================================== -->
+    <section id="tab-global" class="tab-panel">
+
+      <div class="card-panel">
+        <div class="card-panel-header-flex">
+          <div>
+            <span class="section-eyebrow">CONSOLIDADO INSTITUCIONAL DE LOS 5 ESTAMENTOS DEL ITM</span>
+            <h3 class="panel-title">Matriz Maestra de Tamaños Poblacionales y Muestrales bajo la Parametrización Activa (P1–P12)</h3>
+          </div>
+          <button type="button" id="btnExportGlobalSummaryXLSX" class="btn-export btn-export-xlsx">
+            📗 Exportar Consolidado Institucional (.xlsx)
+          </button>
+        </div>
+
+        <div class="table-responsive">
+          <table class="data-table" id="tableGlobalConsolidado">
+            <thead>
+              <tr>
+                <th>Estamento Institucional</th>
+                <th>Base Fuente Oficial</th>
+                <th>Reglas P1–P12 Aplicadas</th>
+                <th>Variables de Estratificación</th>
+                <th class="num-col">Registros Crudos</th>
+                <th class="num-col">Marco Efectivo $N$</th>
+                <th class="num-col">Estratos $H$</th>
+                <th class="num-col">Escenario A<br/><small>95% Conf. / 5.0% Error</small></th>
+                <th class="num-col">Escenario B<br/><small>95% Conf. / 3.5% Error</small></th>
+                <th class="num-col">Escenario C<br/><small>95% Conf. / 3.0% Error</small></th>
+                <th class="num-col">Escenario D<br/><small>99% Conf. / 3.0% Error</small></th>
+              </tr>
+            </thead>
+            <tbody id="tbodyGlobalConsolidado"></tbody>
+            <tfoot id="tfootGlobalConsolidado"></tfoot>
+          </table>
+        </div>
+      </div>
+
+      <!-- Gráfico Comparativo de los 5 Estamentos -->
+      <div class="card-panel" style="margin-top: 20px;">
+        <div class="card-panel-header-flex">
+          <div>
+            <span class="section-eyebrow">VISUALIZACIÓN MULTIESCENARIO</span>
+            <h3 class="panel-title">Comparativa de Tamaños de Muestra por Estamento según Escenario de Precisión</h3>
+          </div>
+        </div>
+        <div id="plotGlobalComparison" class="plotly-chart-box" style="height: 370px;"></div>
+      </div>
+
+      <!-- Tabla Oficial de Auditoría Viernes 6 de Noviembre vs Lunes 9 de Noviembre -->
+      <div class="card-panel" style="margin-top: 20px;">
+        <div class="card-panel-header-flex">
+          <div>
+            <span class="section-eyebrow">TRAZABILIDAD DOCUMENTAL Y DEPURACIÓN DE MARCOS MUESTRALES</span>
+            <h3 class="panel-title">Auditoría Comparativa: Corte Viernes 6 de Noviembre vs. Corte Lunes 9 de Noviembre de 2026</h3>
+          </div>
+          <span class="badge-pill badge-navy">Verificación 100% Exacta</span>
+        </div>
+
+        <div class="table-responsive">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Estamento / Archivo</th>
+                <th>Corte Viernes 6 Nov</th>
+                <th>Corte Lunes 9 Nov</th>
+                <th>Hallazgos de Auditoría Forense y Anomalías Detectadas</th>
+                <th>Parámetro de Control en SIMER-ITM</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><strong>1. Estudiantes</strong><br/><code>Estudiantes.xlsx</code></td>
+                <td class="num-col">29,904 filas<br/><small>29,904 IDs únicos</small></td>
+                <td class="num-col">29,904 filas<br/><small>Sin cambios</small></td>
+                <td>
+                  Cero duplicados. Al cruzar con <code>Matriculados/</code>, <code>Inscritos/</code> (incluyendo <code>2026-2.csv</code>) y <code>Admitidos_2011_2026/</code> se enlazan <strong>29,280 estudiantes (97.91%)</strong> en <code>Estudiantes_Enriquecido.xlsx</code>. En Posgrado existen micro-estratos en Doctorado y Especialización Virtual que se estabilizan al agrupar en <em>Nivel Agrupado (Tecnológico, Universitario, Posgrado)</em>.
+                </td>
+                <td><span class="badge-pill badge-navy">Parámetro P12 (Forma 1 vs Forma 2)</span></td>
+              </tr>
+              <tr>
+                <td><strong>2. Docentes</strong><br/><code>Profesores.xlsx</code></td>
+                <td class="num-col">1,778 filas<br/><small>1,700 cédulas únicas</small></td>
+                <td class="num-col">1,778 filas<br/><small>Sin cambios</small></td>
+                <td>
+                  <ul>
+                    <li><strong>78 docentes duplicados (156 filas)</strong> por tener doble vinculación (Carrera/Ocasional + <em>Cátedra extra</em>).</li>
+                    <li><strong>0 duplicados</strong> con el mismo tipo de contrato en el corte actual (reglas P2 y P3 activas preventivamente para nuevos archivos).</li>
+                    <li><strong>239 registros en Cátedra sin correo electrónico</strong> (celda vacía).</li>
+                  </ul>
+                </td>
+                <td><span class="badge-pill badge-teal">Parámetros P1, P2, P3 y P4</span></td>
+              </tr>
+              <tr>
+                <td><strong>3. Administrativos</strong><br/><code>Administrativos.xlsx</code></td>
+                <td class="num-col">2 hojas (232 filas)<br/><small>9 Rectoría + 223 Admin.</small></td>
+                <td class="num-col">232 filas<br/><small>Sin cambios</small></td>
+                <td>
+                  <ul>
+                    <li><strong>19 registros</strong> en hoja <code>ADMINISTRATIVOS</code> con <code>CÉDULA</code> vacía (<code>BNLE</code>, <code>ANTIOQUIA 3</code>, <code>Vacante</code>) y sin correo.</li>
+                    <li><strong>Cédula 71720089</strong> repetida 2 veces: fila activa en <em>Encargo</em> (con correo) y fila en <em>Vacante temporal</em> (<code>VCACANTE - Robinson Sánchez Zambrano</code>, sin correo).</li>
+                    <li><strong>Cédula 70382234</strong> con error de digitación <code>DEPENDENCIA = "claudia patricia"</code> (cargo Director Administrativo).</li>
+                    <li><strong>Cédula 71611587</strong> en hoja <code>RECTORIA</code> (Conductor) sin correo electrónico.</li>
+                  </ul>
+                </td>
+                <td><span class="badge-pill badge-emerald">Parámetros P5, P6, P7, P8 y P9</span></td>
+              </tr>
+              <tr>
+                <td><strong>4. Empleadores</strong><br/><code>Empleadores.xlsx</code></td>
+                <td class="num-col">531 filas<br/><small>Contactos de jefes</small></td>
+                <td class="num-col">531 filas<br/><small>303 NITs únicos</small></td>
+                <td>
+                  La base contiene <strong>531 registros de contacto (Jefes inmediatos)</strong> distribuidos en <strong>303 empresas únicas (NIT)</strong>. Empresas grandes e instituciones públicas concentran múltiples jefes de práctica/egresados.
+                </td>
+                <td><span class="badge-pill badge-amber">Parámetro P10 (Empresa = 303 vs Jefe = 531)</span></td>
+              </tr>
+              <tr>
+                <td><strong>5. Graduados</strong><br/><code>Graduados.xlsx</code></td>
+                <td class="num-col">54,739 títulos<br/><small>45,154 graduados únicos</small></td>
+                <td class="num-col">54,739 filas<br/><small>45,154 con Último reg = 1</small></td>
+                <td>
+                  Al filtrar <code>Último registro = 1</code> se obtienen los <strong>45,154 graduados únicos</strong> del ITM. De ellos, <strong>3,276 cuentan con correo electrónico registrado (7.26%)</strong> y <strong>41,878 no tienen correo electrónico (92.74%)</strong> en la columna <code>Correo</code>.
+                </td>
+                <td><span class="badge-pill badge-indigo">Parámetro P11 (Con correo = 3,276 vs Total = 45,154)</span></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+    </section>
+
+    <!-- ===================================================================
+         PESTAÑA 4: MARCO MATEMÁTICO Y METODOLÓGICO (KaTeX)
+         =================================================================== -->
+    <section id="tab-matematica" class="tab-panel">
+      <div class="math-grid">
+        <div class="card-panel">
+          <span class="section-eyebrow">1. MUESTREO ALEATORIO SIMPLE SIN REEMPLAZO (MAS)</span>
+          <h3 class="panel-title">Tamaño de Muestra con Corrección por Población Finita (FPC)</h3>
+          <p class="math-prose">
+            Para estimar una proporción poblacional $P$ en un universo finito de tamaño $N$ con nivel de confianza $1-\alpha$, cuantil normal estándar $Z = \Phi^{-1}(1-\alpha/2)$ y margen de error admisible $e$:
+          </p>
+          <div class="math-block">
+            $$n_0 = \frac{Z_{1-\alpha/2}^2 \, p(1-p)}{e^2}, \qquad n_{\text{MAS}} = \left\lceil \frac{n_0}{1 + \dfrac{n_0 - 1}{N}} \right\rceil = \left\lceil \frac{N \, Z_{1-\alpha/2}^2 \, p(1-p)}{(N-1)e^2 + Z_{1-\alpha/2}^2 \, p(1-p)} \right\rceil$$
+          </div>
+          <p class="math-prose">
+            Bajo el supuesto de máxima incertidumbre (varianza conservadora máxima), se adopta $p = 0.50 \implies p(1-p) = 0.25$.
+          </p>
+        </div>
+
+        <div class="card-panel">
+          <span class="section-eyebrow">2. MUESTREO ALEATORIO ESTRATIFICADO (MAE) — COCHRAN (1977)</span>
+          <h3 class="panel-title">Ecuación General de Tamaño Global y Esquemas de Afijación ($W_h = N_h/N$)</h3>
+          <p class="math-prose">
+            Particionando la población en $H$ estratos mutuamente excluyentes ($N = \sum_{h=1}^H N_h$), con cuasi-varianza estratificada $S_h^2 = \frac{N_h}{N_h-1}p_h(1-p_h)$ y fracción de afijación $w_h = n_h / n$:
+          </p>
+          <div class="math-block">
+            $$n = \frac{\displaystyle\sum_{h=1}^{H} \frac{W_h^2 S_h^2}{w_h}}{\dfrac{e^2}{Z_{1-\alpha/2}^2} + \dfrac{1}{N}\displaystyle\sum_{h=1}^{H} W_h S_h^2}$$
+          </div>
+          <ul class="math-list">
+            <li><strong>Afijación Proporcional ($w_h = W_h = N_h / N$):</strong> $n_h = \lceil n \cdot (N_h / N) \rceil$, garantizando autoponderación en cada estrato ($f_h = n_h / N_h \approx f$).</li>
+            <li><strong>Afijación Óptima de Neyman ($w_h \propto W_h S_h$):</strong> Minimiza la varianza del estimador $\hat{P}_{\text{MAE}}$ para un tamaño fijo $n$:
+              $$w_h^{\text{Neyman}} = \frac{N_h S_h}{\sum_{k=1}^H N_k S_k}, \qquad n_{\text{Neyman}} = \frac{\left(\sum_{h=1}^H W_h S_h\right)^2}{\dfrac{e^2}{Z_{1-\alpha/2}^2} + \dfrac{1}{N}\sum_{h=1}^H W_h S_h^2}$$
+            </li>
+          </ul>
+        </div>
+
+        <div class="card-panel">
+          <span class="section-eyebrow">3. MUESTREO BIFÁSICO (PILOTO $n_{\text{inicial}}$ Y COMPLEMENTO $n_{\text{final}} - n_{\text{inicial}}$)</span>
+          <h3 class="panel-title">Procedimiento de Dos Etapas de Stein-Neyman sin Reemplazo</h3>
+          <p class="math-prose">
+            En la <strong>Fase 1</strong> se selecciona una muestra preliminar piloto $\mathcal{S}_{\text{inicial}, h} \subset \mathcal{U}_h$ de tamaño $n_{\text{inicial}, h}$ ($\sum_h n_{\text{inicial}, h} \ge 30$). A partir de las respuestas piloto se estima $\hat{p}_{0h}$ y la cuasi-varianza empírica $\hat{S}_h^2 = \frac{n_{\text{ini},h}}{n_{\text{ini},h}-1}\hat{p}_{0h}(1-\hat{p}_{0h})$.
+          </p>
+          <div class="math-block">
+            $$n_{\text{final}, h} = \left\lceil n_{\text{final}}(\hat{\mathbf{S}}) \cdot w_h \right\rceil, \qquad n_{\text{restante}, h} = \max\!\left(0,\; n_{\text{final}, h} - n_{\text{inicial}, h}\right)$$
+          </div>
+          <p class="math-prose">
+            En la <strong>Fase 2</strong> se seleccionan aleatoriamente únicamente los $n_{\text{restante}, h}$ individuos faltantes dentro del subconjunto remanente $\mathcal{U}_h \setminus \mathcal{S}_{\text{inicial}, h}$, garantizando $\mathcal{S}_{\text{inicial}, h} \cap \mathcal{S}_{\text{restante}, h} = \emptyset$.
+          </p>
+        </div>
+
+        <div class="card-panel">
+          <span class="section-eyebrow">4. DISCRETIZACIÓN ÓPTIMA DE VARIABLES CUANTITATIVAS</span>
+          <h3 class="panel-title">Método de Dalenius-Hodges ($\text{acum }\sqrt{f}$) para Estratificación Continua</h3>
+          <p class="math-prose">
+            Cuando se estratifica por una variable continua auxiliar $X$ (ej. <em>Promedio Acumulado</em>, <em>Edad</em>, <em>% Avance</em> u <em>Horas Planeadas</em>), el método de <strong>Dalenius y Hodges (1959)</strong> aproxima los límites óptimos $x_1 < x_2 < \dots < x_{L-1}$ dividiendo la integral de la raíz cuadrada de la densidad en $L$ partes iguales:
+          </p>
+          <div class="math-block">
+            $$G(x) = \int_{x_{\min}}^{x} \sqrt{f(t)}\,dt, \qquad G(x_k) = \frac{k}{L}\,G(x_{\max}), \quad k = 1, 2, \dots, L-1$$
+          </div>
+          <p class="math-prose">
+            Esto homogeniza los estratos internos y maximiza la reducción de varianza bajo afijación de Neyman o proporcional.
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===================================================================
+         PESTAÑA 5: CARGAR DATASET PROPIO (.XLSX / .CSV)
+         =================================================================== -->
+    <section id="tab-custom" class="tab-panel">
+      <div class="card-panel">
+        <div class="card-panel-header-flex">
+          <div>
+            <span class="section-eyebrow">PROCESAMIENTO 100% LOCAL EN EL NAVEGADOR (SHEETJS · PRIVACIDAD HABEAS DATA)</span>
+            <h3 class="panel-title">Cargar Nuevo Marco Muestral (.xlsx o .csv) para Estratificación y Sorteo</h3>
+          </div>
+          <span class="badge-pill badge-teal">Compatible con Excel (.xlsx, .xls) y CSV</span>
+        </div>
+
+        <div class="upload-dropzone" id="customFileDropzone">
+          <input type="file" id="inputCustomDatasetFile" accept=".xlsx,.xls,.csv" class="hidden-file-input" />
+          <div class="dropzone-content">
+            <div class="dropzone-icon">📂</div>
+            <h4>Arrastra aquí tu archivo Excel (<code>.xlsx</code>) o <code>.csv</code>, o haz clic para seleccionarlo</h4>
+            <p>
+              El archivo se procesa íntegramente en la memoria local de tu navegador sin enviar datos a ningún servidor externo. Una vez cargado, podrás seleccionar cualquier combinación de columnas categóricas o cuantitativas en la Pestaña 1 para calcular la muestra y descargar los seleccionados.
+            </p>
+            <button type="button" class="btn-action-primary" style="max-width: 280px; margin: 12px auto 0;" onclick="document.getElementById('inputCustomDatasetFile').click()">
+              Seleccionar Archivo (.xlsx / .csv)
+            </button>
+          </div>
+        </div>
+
+        <div id="customDatasetStatusBox" class="custom-status-box hidden">
+          <!-- Resumen del dataset cargado por el usuario -->
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- =====================================================================
+       MODAL DE PARAMETRIZACIÓN INICIAL OBLIGATORIA (P1 A P12)
+       ===================================================================== -->
+  <div id="modalParametrizacion" class="modal-backdrop active" role="dialog" aria-modal="true" aria-labelledby="modalParamsTitle">
+    <div class="modal-container">
+
+      <!-- Encabezado del Modal -->
+      <div class="modal-header">
+        <div class="modal-brand-row">
+          <img src="assets/logo_itm.png" alt="Escudo ITM" class="modal-logo" onerror="this.style.display='none'" />
+          <div>
+            <div class="brand-badges">
+              <span class="badge-pill badge-navy">PASO INICIAL OBLIGATORIO ANTES DEL ANÁLISIS</span>
+              <span class="badge-pill badge-teal">12 PARÁMETROS INSTITUCIONALES (P1–P12)</span>
+            </div>
+            <h2 id="modalParamsTitle" class="modal-title">
+              Módulo de Parametrización Inicial y Depuración de Marcos Muestrales — SIMER-ITM
+            </h2>
+            <p class="modal-subtitle">
+              Verifica o ajusta las reglas de decisión institucional sobre los casos atípicos detectados en la auditoría de las 5 bases de datos oficiales del ITM. Los valores preseleccionados corresponden a los <strong>criterios metodológicos por defecto</strong>.
+            </p>
+          </div>
+        </div>
+        <button type="button" id="btnCloseParamsModalTop" class="modal-close-btn" title="Confirmar y cerrar panel">&times;</button>
+      </div>
+
+      <!-- Barra de Impacto en Vivo dentro del Modal -->
+      <div class="modal-live-summary">
+        <div class="modal-sum-item">
+          <span class="sum-label">🎓 Estudiantes ($N$)</span>
+          <span class="sum-val" id="modalN_estudiantes">29,904</span>
+        </div>
+        <div class="modal-sum-item">
+          <span class="sum-label">👨‍🏫 Docentes ($N$)</span>
+          <span class="sum-val" id="modalN_docentes">1,462</span>
+        </div>
+        <div class="modal-sum-item">
+          <span class="sum-label">🏛️ Administrativos ($N$)</span>
+          <span class="sum-val" id="modalN_administrativos">211</span>
+        </div>
+        <div class="modal-sum-item">
+          <span class="sum-label">🏢 Empleadores ($N$)</span>
+          <span class="sum-val" id="modalN_empleadores">303</span>
+        </div>
+        <div class="modal-sum-item">
+          <span class="sum-label">🎖️ Graduados ($N$)</span>
+          <span class="sum-val" id="modalN_graduados">3,276</span>
+        </div>
+      </div>
+
+      <!-- Cuerpo Escroleable con los 12 Parámetros (P1 a P12) -->
+      <div class="modal-body">
+
+        <!-- GRUPO I: DOCENTES (P1 a P4) -->
+        <div class="param-section-group">
+          <div class="param-group-header header-teal">
+            <h3>👨‍🏫 I. Parámetros de Depuración en Docentes (<code>Profesores.xlsx</code> — 1,778 filas crudas / 1,700 únicos)</h3>
+            <span class="param-group-impact" id="modalGroupImpactDocentes">Marco resultante: 1,462 docentes</span>
+          </div>
+
+          <div class="params-grid">
+            <!-- P1 -->
+            <div class="param-card">
+              <div class="param-card-top">
+                <span class="param-code">PARÁMETRO P1</span>
+                <span class="param-default-badge">Por defecto: Eliminar CÁTEDRA</span>
+              </div>
+              <h4>Docentes duplicados con dos tipos distintos de contrato (<em>cátedra extra</em> — 78 docentes / 156 registros)</h4>
+              <p>Docentes de Carrera (13) u Ocasionales (65) que aparecen una segunda vez con contrato de <code>CÁTEDRA</code> por horas de cátedra extra. ¿Qué registro eliminar?</p>
+              <select id="param_P1" class="form-select param-input">
+                <option value="CATEDRA" selected>CÁTEDRA (Por defecto — Conservar vinculación principal Carrera/Ocasional)</option>
+                <option value="OTRO">El otro (Eliminar CARRERA / OCASIONAL y conservar CÁTEDRA)</option>
+                <option value="AMBOS">Conservar ambos registros (1,778 unidades de contrato)</option>
+              </select>
+            </div>
+
+            <!-- P2 -->
+            <div class="param-card">
+              <div class="param-card-top">
+                <span class="param-code">PARÁMETRO P2</span>
+                <span class="param-default-badge">Por defecto: Eliminar @correo.itm</span>
+              </div>
+              <h4>Docentes duplicados con la misma categoría en tipo de contrato y distinto dominio de correo</h4>
+              <p>Si un docente presenta dos registros con el mismo tipo de contrato pero diferente correo institucional, ¿qué registro eliminar?</p>
+              <select id="param_P2" class="form-select param-input">
+                <option value="CORREO_ITM" selected>@correo.itm (Por defecto — Conservar dominio administrativo @itm.edu.co)</option>
+                <option value="ITM">@itm (Eliminar @itm.edu.co y conservar @correo.itm.edu.co)</option>
+                <option value="AMBOS">Eliminar ambos registros</option>
+              </select>
+            </div>
+
+            <!-- P3 -->
+            <div class="param-card">
+              <div class="param-card-top">
+                <span class="param-code">PARÁMETRO P3</span>
+                <span class="param-default-badge">Regla Fija Institucional</span>
+              </div>
+              <h4>Docentes con varios registros totalmente iguales (duplicados exactos de fila)</h4>
+              <p>Deduplicación primaria para registros idénticos en todos los campos dentro del archivo fuente:</p>
+              <select id="param_P3" class="form-select param-input">
+                <option value="DEJAR_UNO" selected>Dejar uno solo de ellos (Deduplicación exacta activa)</option>
+              </select>
+            </div>
+
+            <!-- P4 -->
+            <div class="param-card">
+              <div class="param-card-top">
+                <span class="param-code">PARÁMETRO P4</span>
+                <span class="param-default-badge">Por defecto: Excluir</span>
+              </div>
+              <h4>Docentes con celda vacía en correo electrónico (239 registros en Cátedra sin correo)</h4>
+              <p>En <code>Profesores.xlsx</code> hay 239 registros de Cátedra sin dirección de correo electrónico para envío digital del instrumento:</p>
+              <select id="param_P4" class="form-select param-input">
+                <option value="EXCLUIR" selected>Excluir (Por defecto — Marco contactable con correo: N = 1,462)</option>
+                <option value="NO_EXCLUIR">No Excluir (Incluir en el marco muestral: N = 1,700)</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <!-- GRUPO II: ADMINISTRATIVOS (P5 a P9) -->
+        <div class="param-section-group">
+          <div class="param-group-header header-emerald">
+            <h3>🏛️ II. Parámetros de Depuración y Selección en Administrativos (<code>Administrativos.xlsx</code> — 232 filas en 2 hojas)</h3>
+            <span class="param-group-impact" id="modalGroupImpactAdmin">Marco resultante: 211 administrativos (Censo)</span>
+          </div>
+
+          <div class="params-grid">
+            <!-- P5 -->
+            <div class="param-card">
+              <div class="param-card-top">
+                <span class="param-code">PARÁMETRO P5</span>
+                <span class="param-default-badge">Por defecto: Excluir</span>
+              </div>
+              <h4>Administrativos en hoja <code>ADMINISTRATIVOS</code> con <code>CÉDULA</code> vacía y valor <code>BNLE</code>, <code>ANTIOQUIA 3</code> o <code>Vacante</code> sin correo (19 registros)</h4>
+              <p>Corresponden a plazas vacantes de planta sin funcionario titular asignado ni correo electrónico:</p>
+              <select id="param_P5" class="form-select param-input">
+                <option value="EXCLUIR" selected>Excluir (Por defecto — Descartar las 19 plazas vacantes sin cédula)</option>
+                <option value="NO_EXCLUIR">No Excluir (Conservar las 19 plazas vacantes)</option>
+              </select>
+            </div>
+
+            <!-- P6 -->
+            <div class="param-card">
+              <div class="param-card-top">
+                <span class="param-code">PARÁMETRO P6</span>
+                <span class="param-default-badge">Por defecto: Excluir</span>
+              </div>
+              <h4>Administrativo con <code>CÉDULA 71720089</code> sin correo y nombre <code>VCACANTE - Robinson Sánchez Zambrano</code></h4>
+              <p>El funcionario ya aparece activo con correo en el cargo #87 (<em>Encargo - Profesional Especializado</em>), mientras la plaza #166 (<em>Técnico Administrativo</em>) está en vacancia temporal sin correo:</p>
+              <select id="param_P6" class="form-select param-input">
+                <option value="EXCLUIR" selected>Excluir (Por defecto — Evitar duplicidad y conservar solo su cargo activo con correo)</option>
+                <option value="NO_EXCLUIR">No Excluir (Conservar también el registro en vacante temporal)</option>
+              </select>
+            </div>
+
+            <!-- P7 -->
+            <div class="param-card">
+              <div class="param-card-top">
+                <span class="param-code">PARÁMETRO P7</span>
+                <span class="param-default-badge">Por defecto: No Excluir</span>
+              </div>
+              <h4>Administrativo con <code>CÉDULA 70382234</code> con <code>DEPENDENCIA = "claudia patricia"</code></h4>
+              <p>Funcionario titular válido con correo institucional (<em>Director Administrativo</em>, planta #15) donde se digitó por error un nombre propio en la columna <code>DEPENDENCIA</code>:</p>
+              <select id="param_P7" class="form-select param-input">
+                <option value="NO_EXCLUIR" selected>No Excluir (Por defecto — Conservar funcionario recodificando a Dirección Administrativa)</option>
+                <option value="EXCLUIR">Excluir (Descartar registro)</option>
+              </select>
+            </div>
+
+            <!-- P8 -->
+            <div class="param-card">
+              <div class="param-card-top">
+                <span class="param-code">PARÁMETRO P8</span>
+                <span class="param-default-badge">Por defecto: Excluir</span>
+              </div>
+              <h4>Administrativo en hoja <code>RECTORIA</code> con <code>CÉDULA 71611587</code> — Conductor sin correo electrónico</h4>
+              <p>Único funcionario de los 9 registros de la hoja <code>RECTORIA</code> que no registra correo electrónico institucional:</p>
+              <select id="param_P8" class="form-select param-input">
+                <option value="EXCLUIR" selected>Excluir (Por defecto — Quedan 8 funcionarios con correo en Rectoría)</option>
+                <option value="NO_EXCLUIR">No Excluir (Conservar los 9 funcionarios en Rectoría)</option>
+              </select>
+            </div>
+
+            <!-- P9 -->
+            <div class="param-card param-card-wide">
+              <div class="param-card-top">
+                <span class="param-code">PARÁMETRO P9</span>
+                <span class="param-default-badge">Por defecto: Censo Institucional</span>
+              </div>
+              <h4>Administrativos — Estrategia de Selección Estadística</h4>
+              <p>Dado el tamaño reducido del estamento administrativo depurado ($N = 211$) y su alta heterogeneidad funcional, define si se aplica <strong>Censo ($n = N$)</strong> o <strong>Muestreo Aleatorio Estratificado</strong>:</p>
+              <select id="param_P9" class="form-select param-input">
+                <option value="CENSO" selected>Censo (Por defecto — Encuestar al 100% de los administrativos válidos: n = N)</option>
+                <option value="MUESTREO">Muestreo Aleatorio Estratificado por Nivel Jerárquico / Hoja</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <!-- GRUPO III: EMPLEADORES (P10), GRADUADOS (P11) Y ESTUDIANTES (P12) -->
+        <div class="param-section-group">
+          <div class="param-group-header header-navy">
+            <h3>🏢🎖️🎓 III. Parámetros de Unidad Muestral en Empleadores (P10), Graduados (P11) y Estudiantes (P12)</h3>
+            <span class="param-group-impact">Configuración Estructural</span>
+          </div>
+
+          <div class="params-grid">
+            <!-- P10 -->
+            <div class="param-card">
+              <div class="param-card-top">
+                <span class="param-code">PARÁMETRO P10 · EMPLEADORES</span>
+                <span class="param-default-badge">Por defecto: Empresa (303)</span>
+              </div>
+              <h4>Empleadores — Unidad estadística a encuestar (<code>Empleadores.xlsx</code>)</h4>
+              <p>¿La unidad de muestreo es la <strong>Empresa única por NIT ($N = 303$)</strong> o cada <strong>Jefe/Contacto directo ($N = 531$)</strong>?</p>
+              <select id="param_P10" class="form-select param-input">
+                <option value="EMPRESA" selected>Empresa (Por defecto — Marco deduplicado por NIT único: N = 303 empresas)</option>
+                <option value="JEFE">Jefe (Contacto directo — Marco de todos los jefes registrados: N = 531 contactos)</option>
+              </select>
+            </div>
+
+            <!-- P11 -->
+            <div class="param-card">
+              <div class="param-card-top">
+                <span class="param-code">PARÁMETRO P11 · GRADUADOS</span>
+                <span class="param-default-badge">Por defecto: Excluir sin correo</span>
+              </div>
+              <h4>Graduados sin correo electrónico (<code>Graduados.xlsx</code> — 45,154 únicos con <code>Último registro = 1</code>)</h4>
+              <p>De los 45,154 graduados únicos, <strong>3,276 tienen correo electrónico</strong> y <strong>41,878 tienen celda vacía en correo</strong>:</p>
+              <select id="param_P11" class="form-select param-input">
+                <option value="EXCLUIR" selected>Excluir (Por defecto — Marco efectivo contactable con correo: N = 3,276)</option>
+                <option value="NO_EXCLUIR">No Excluir (Marco histórico total de graduados únicos: N = 45,154)</option>
+              </select>
+            </div>
+
+            <!-- P12 -->
+            <div class="param-card param-card-wide">
+              <div class="param-card-top">
+                <span class="param-code">PARÁMETRO P12 · ESTUDIANTES (PRIORIDAD)</span>
+                <span class="param-default-badge">Por defecto: Forma 1</span>
+              </div>
+              <h4>Estudiantes — Forma de Estratificación (<code>Estudiantes.xlsx</code> vs. <code>Estudiantes_Enriquecido.xlsx</code>)</h4>
+              <p>Selecciona la arquitectura de estratificación para los $29,904$ estudiantes activos (también conmutable en cualquier momento desde la pantalla principal):</p>
+              <select id="param_P12" class="form-select param-input">
+                <option value="FORMA_1" selected>Forma 1 (Por defecto): Facultad × Nivel Agrupado (Tecnológico, Universitario, Posgrado) × Modalidad (Estudiantes.xlsx = 29,904)</option>
+                <option value="FORMA_2">Forma 2: Escoger otras variables categóricas o cuantitativas para estudiar estratificación (Estudiantes_Enriquecido.xlsx)</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Pie del Modal -->
+      <div class="modal-footer">
+        <button type="button" id="btnResetParamsModal" class="btn-outline">
+          ↺ Restaurar los 12 Valores por Defecto
+        </button>
+        <button type="button" id="btnConfirmParamsModal" class="btn-action-primary" style="width: auto; padding: 12px 28px;">
+          ✅ Aplicar Parametrización (P1–P12) y Continuar al Sistema
+        </button>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- =====================================================================
+       FIRMA FIJA OBLIGATORIA DEL AUTOR (ESQUINA INFERIOR DERECHA)
+       ===================================================================== -->
+  <div class="author-floating-signature" aria-label="Firma del Autor">
+    <span class="sig-dot"></span>
+    <span class="sig-text">Marvin Luis Jiménez Narváez, Docente Ocasional, Facultad de Ciencias Exactas y Aplicadas</span>
+  </div>
+
+  <!-- Datos Embebidos (Fallback instantáneo para ejecución local file:// y GitHub Pages) -->
+  <script src="data/embedded_data.js"></script>
+  <!-- Motor Estadístico e Interactivo Principal -->
+  <script src="app.js"></script>
+</body>
+</html>
