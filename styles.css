@@ -1971,27 +1971,150 @@ code {
   border-color: var(--itm-navy);
 }
 
+/* Diagnóstico de viabilidad por estrato: tabla sobre fondo blanco con filete de estado a la izquierda */
 .gpa-viability-strip {
-  margin-top: 12px;
-  padding: 10px 14px;
+  margin-top: 14px;
+  padding: 12px 14px;
   border-radius: var(--radius-sm);
   font-size: 12.5px;
   line-height: 1.5;
   display: flex;
   flex-direction: column;
+  gap: 10px;
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-left-width: 4px;
+  color: #1e293b;
+}
+
+.gpa-viability-strip.viable-ok { border-left-color: #059669; }
+.gpa-viability-strip.viable-warn { border-left-color: #0d9488; }
+.gpa-viability-strip.viable-bad { border-left-color: #e11d48; }
+
+.gpa-viab-headline {
+  margin: 0;
+  font-size: 13.5px;
+  color: #0f172a;
+}
+
+.gpa-viab-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 18px;
+  font-size: 12px;
+  color: #475569;
+}
+
+.gpa-viab-table-wrap {
+  overflow-x: auto;
+  max-height: 460px;
+  overflow-y: auto;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+}
+
+.gpa-viab-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+}
+
+.gpa-viab-table th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  background: #f1f5f9;
+  color: var(--itm-navy);
+  font-weight: 700;
+  text-align: left;
+  vertical-align: bottom;
+  padding: 8px 10px;
+  border-bottom: 2px solid var(--itm-navy);
+  line-height: 1.3;
+}
+
+.gpa-viab-table th .th-sym {
+  display: inline-block;
+  margin-top: 3px;
+  font-weight: 400;
+  color: #334155;
+}
+
+.gpa-viab-table td {
+  padding: 6px 10px;
+  border-bottom: 1px solid #eef2f7;
+  vertical-align: top;
+}
+
+.gpa-viab-table .num-col { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.gpa-viab-table .center-col { text-align: center; }
+
+.gpa-viab-table tr.row-gpa-fallback td { background: #f0fdfa; }
+.gpa-viab-table tr.row-gpa-deficit td { background: #fff1f2; }
+
+.gpa-viab-table tfoot td {
+  background: #f8fafc;
+  border-top: 2px solid #cbd5e1;
+  border-bottom: none;
+}
+
+.gpa-yes, .gpa-no {
+  display: inline-block;
+  min-width: 34px;
+  padding: 1px 8px;
+  border-radius: 999px;
+  font-weight: 700;
+  font-size: 11.5px;
+}
+.gpa-yes { background: #d1fae5; color: #065f46; }
+.gpa-no { background: #ffe4e6; color: #9f1239; }
+
+/* Opciones para estudiantes con promedio 0.0 */
+.gpa-zero-rule-item { max-width: 520px; }
+
+.gpa-zero-count {
+  font-weight: 400;
+  color: #64748b;
+  margin-left: 4px;
+}
+
+.gpa-zero-explainer {
+  margin: 4px 0 8px;
+  font-size: 12px;
+  color: #475569;
+  line-height: 1.45;
+}
+
+.gpa-zero-options {
+  display: flex;
+  flex-direction: column;
   gap: 6px;
 }
 
-.gpa-viability-strip.viable-ok {
-  background: #ecfdf5;
-  border: 1px solid #6ee7b7;
-  color: #065f46;
+.gpa-zero-option {
+  display: flex;
+  gap: 8px;
+  align-items: flex-start;
+  padding: 7px 10px;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  background: #ffffff;
+  font-size: 12px;
+  line-height: 1.4;
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s;
 }
 
-.gpa-viability-strip.viable-warn {
-  background: #fffbeb;
-  border: 1px solid #fcd34d;
-  color: #92400e;
+.gpa-zero-option:hover { border-color: var(--sci-teal); }
+
+.gpa-zero-option input {
+  margin-top: 2px;
+  accent-color: var(--itm-navy);
+}
+
+.gpa-zero-option:has(input:checked) {
+  border-color: var(--itm-navy);
+  background: var(--itm-navy-light);
 }
 
 .gpa-metrics-inline {
