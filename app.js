@@ -57,7 +57,7 @@
         { id: 'semestre', label: 'Semestre / Nivel Académico [Cuantitativa]', type: 'quant', forma: 2, defaultCuts: [3, 6, 8], unit: 'sem' }
       ],
       defaultVarsForma1: ['facultad', 'nivel_agrupado', 'modalidad'],
-      defaultVarsForma2: ['facultad', 'ciclo_formativo', 'promedio']
+      defaultVarsForma2: ['facultad', 'ciclo_formativo', 'sexo']
     },
     docentes: {
       key: 'docentes',
@@ -66,10 +66,7 @@
       sourceFile: 'Profesores.xlsx',
       rawCount: 1778,
       variables: [
-        { id: 'tipo_vinculacion', label: 'Tipo de Vinculación (Carrera, Ocasional, Cátedra)', type: 'cat' },
-        { id: 'dominio_correo', label: 'Dominio de Correo Institucional (@itm vs @correo.itm)', type: 'cat' },
-        { id: 'misional', label: 'Clasificación Misional', type: 'cat' },
-        { id: 'horas_planeadas', label: 'Horas Planeadas en Semestre [Cuantitativa]', type: 'quant', defaultCuts: [160, 400, 800], unit: 'hrs' }
+        { id: 'tipo_vinculacion', label: 'Tipo de Vinculación (Carrera, Ocasional, Cátedra)', type: 'cat' }
       ],
       defaultVars: ['tipo_vinculacion']
     },
@@ -80,14 +77,9 @@
       sourceFile: 'Administrativos.xlsx (Hojas RECTORIA + ADMINISTRATIVOS)',
       rawCount: 232,
       variables: [
-        { id: 'nivel_jerarquico', label: 'Nivel Jerárquico (Directivo, Profesional, Técnico, Asistencial)', type: 'cat' },
-        { id: 'hoja', label: 'Planta / Hoja (RECTORIA vs ADMINISTRATIVOS)', type: 'cat' },
-        { id: 'naturaleza', label: 'Naturaleza del Cargo (CA, LN, PF, Periodo Fijo)', type: 'cat' },
-        { id: 'situacion_adm', label: 'Situación Administrativa (Titular, Encargo, Provisionalidad)', type: 'cat' },
-        { id: 'dependencia', label: 'Dependencia Organizacional', type: 'cat' },
-        { id: 'grado', label: 'Grado Salarial del Empleo [Cuantitativa]', type: 'quant', defaultCuts: [3, 6, 12], unit: 'grado' }
+        { id: 'nivel_jerarquico', label: 'Nivel Jerárquico (Directivo, Profesional, Técnico, Asistencial)', type: 'cat' }
       ],
-      defaultVars: ['nivel_jerarquico', 'hoja']
+      defaultVars: ['nivel_jerarquico']
     },
     empleadores: {
       key: 'empleadores',
@@ -95,12 +87,8 @@
       icon: '🏢',
       sourceFile: 'Empleadores.xlsx',
       rawCount: 531,
-      variables: [
-        { id: 'sector_empresa', label: 'Sector Económico / Tipo de Organización', type: 'cat' },
-        { id: 'tiene_correo_label', label: 'Disponibilidad de Correo Electrónico', type: 'cat' },
-        { id: 'contactos_en_empresa', label: 'N.º de Jefes/Contactos en la Empresa [Cuantitativa]', type: 'quant', defaultCuts: [1, 3, 6], unit: 'contactos' }
-      ],
-      defaultVars: ['sector_empresa']
+      variables: [],
+      defaultVars: []
     },
     graduados: {
       key: 'graduados',
@@ -111,10 +99,9 @@
       variables: [
         { id: 'facultad', label: 'Facultad de Egreso', type: 'cat' },
         { id: 'nivel_agrupado', label: 'Nivel Agrupado (Tecnológico, Universitario, Posgrado)', type: 'cat' },
-        { id: 'modalidad', label: 'Modalidad del Programa', type: 'cat' },
-        { id: 'nivel', label: 'Nivel Específico (Tecnología, Universitaria, Especialización, Maestría, Doctorado)', type: 'cat' }
+        { id: 'modalidad', label: 'Modalidad del Programa', type: 'cat' }
       ],
-      defaultVars: ['facultad', 'nivel_agrupado', 'modalidad']
+      defaultVars: ['facultad', 'nivel_agrupado']
     },
     custom: {
       key: 'custom',
@@ -164,7 +151,8 @@
     },
     activeEstamento: 'estudiantes',
     activeTab: 'tab-muestreo',
-    onlyLinkedStudentsForma2: false,
+    onlyLinkedStudentsForma2: true,
+    forma2Scope: 'LINKED_ALL', // LINKED_ALL (29,280) | LINKED_MA (23,898) | ALL_29904 (29,904)
 
     // Configuración de muestreo por estamento
     samplingConfig: {
@@ -181,9 +169,9 @@
     selectedVarsByEstamento: {
       estudiantes: ['facultad', 'nivel_agrupado', 'modalidad'],
       docentes: ['tipo_vinculacion'],
-      administrativos: ['nivel_jerarquico', 'hoja'],
-      empleadores: ['sector_empresa'],
-      graduados: ['facultad', 'nivel_agrupado', 'modalidad'],
+      administrativos: ['nivel_jerarquico'],
+      empleadores: [],
+      graduados: ['facultad', 'nivel_agrupado'],
       custom: []
     },
 
@@ -325,10 +313,15 @@
   function applyParameterizationRules() {
     const P = STATE.params;
 
-    // 1. ESTUDIANTES (P12: Forma 1 vs Forma 2)
+    // 1. ESTUDIANTES (P12: Forma 1 [29,904] vs Forma 2 [29,280 o 23,898])
     let estList = STATE.rawDatasets.estudiantes;
-    if (P.P12 === 'FORMA_2' && STATE.onlyLinkedStudentsForma2) {
-      estList = estList.filter((r) => r.enlazado === 1);
+    if (P.P12 === 'FORMA_2') {
+      if (STATE.forma2Scope === 'LINKED_MA') {
+        estList = estList.filter((r) => r.enlazado === 1 && r.avance !== null && r.avance !== undefined);
+      } else if (STATE.forma2Scope === 'LINKED_ALL') {
+        estList = estList.filter((r) => r.enlazado === 1);
+      }
+      // Si es ALL_29904 conserva los 29,904
     }
     STATE.filteredDatasets.estudiantes = estList;
 
@@ -926,8 +919,17 @@
     });
 
     // Etiquetas de estado en tarjetas superiores
+    const nEst = (STATE.filteredDatasets.estudiantes || []).length;
     document.getElementById('tagParamEstudiantes').textContent =
       STATE.params.P12 === 'FORMA_1' ? 'P12: Forma 1' : 'P12: Forma 2';
+    const footEst = document.getElementById('footEstudiantes');
+    if (footEst) {
+      footEst.textContent =
+        STATE.params.P12 === 'FORMA_1'
+          ? 'Estudiantes.xlsx (N = 29,904) · 22 estratos'
+          : `Estudiantes_Enriquecido.xlsx (N = ${formatNumber(nEst)})`;
+    }
+
     document.getElementById('tagParamDocentes').textContent =
       `P1:${STATE.params.P1 === 'CATEDRA' ? '-Cát' : STATE.params.P1} · P4:${STATE.params.P4 === 'EXCLUIR' ? 'Con Correo' : 'Todos'}`;
     document.getElementById('tagParamAdministrativos').textContent =
@@ -937,6 +939,10 @@
     document.getElementById('tagParamGraduados').textContent =
       `P11: ${STATE.params.P11 === 'EXCLUIR' ? 'Con Correo' : 'Todos'}`;
 
+    const estImpact = document.getElementById('modalGroupImpactEstudiantes');
+    if (estImpact) {
+      estImpact.textContent = `Marco resultante: ${formatNumber(nEst)} estudiantes (${STATE.params.P12 === 'FORMA_1' ? 'Forma 1 · Estudiantes.xlsx' : 'Forma 2 · Estudiantes_Enriquecido.xlsx'})`;
+    }
     const docImpact = document.getElementById('modalGroupImpactDocentes');
     if (docImpact) {
       docImpact.textContent = `Marco resultante: ${formatNumber(STATE.filteredDatasets.docentes.length)} docentes`;
@@ -945,12 +951,21 @@
     if (admImpact) {
       admImpact.textContent = `Marco resultante: ${formatNumber(STATE.filteredDatasets.administrativos.length)} administrativos (${STATE.params.P9})`;
     }
+    const empImpact = document.getElementById('modalGroupImpactEmpleadores');
+    if (empImpact) {
+      empImpact.textContent = `Unidad activa: ${STATE.params.P10 === 'EMPRESA' ? 'Empresa única por NIT (N = 303)' : 'Jefe directo (N = 531)'}`;
+    }
+    const gradImpact = document.getElementById('modalGroupImpactGraduados');
+    if (gradImpact) {
+      gradImpact.textContent = `Marco resultante: ${formatNumber(STATE.filteredDatasets.graduados.length)} graduados`;
+    }
   }
 
   function renderVariablesChecklist() {
     const estKey = STATE.activeEstamento;
     const meta = ESTAMENTO_META[estKey];
     const container = document.getElementById('stratVariablesChecklist');
+    const subtitleEl = document.getElementById('stratVarsSubtitle');
     if (!container || !meta) return;
 
     // Mostrar u ocultar el panel especial de Forma 1 vs Forma 2 en Estudiantes
@@ -968,9 +983,32 @@
       forma2FilterBox.classList.add('hidden');
     }
 
+    // Caso especial: Empleadores no tiene variables de estratificación en el dataset
+    if (estKey === 'empleadores' || meta.variables.length === 0) {
+      if (subtitleEl) subtitleEl.textContent = 'Sin variables de estratificación en el dataset';
+      container.innerHTML = `
+        <div style="padding: 12px 14px; background: #f8fafc; border: 1px dashed #94a3b8; border-radius: 8px; font-size: 12.5px; color: #334155; line-height: 1.45;">
+          <strong>ℹ️ Sin variables de estratificación:</strong> El archivo oficial <code>Empleadores.xlsx</code> solo contiene datos de identificación y contacto (<em>Empresa, NIT, Jefe Directo, Teléfono y Correo</em>). El muestreo se ejecuta mediante <strong>Muestreo Aleatorio Simple Sin Reemplazo (MAS)</strong> o <strong>Censo</strong> sobre la unidad elegida en <strong>P10</strong> (${STATE.params.P10 === 'EMPRESA' ? '303 Empresas' : '531 Jefes'}).
+        </div>
+      `;
+      updateQuantitativePanelVisibility();
+      return;
+    }
+
+    // Caso de variable única obligatoria (Docentes: Tipo de Vinculación | Administrativos: Nivel Jerárquico)
+    const isSingleLockedVar = (estKey === 'docentes' || estKey === 'administrativos') && meta.variables.length === 1;
+    if (isSingleLockedVar) {
+      STATE.selectedVarsByEstamento[estKey] = [meta.variables[0].id];
+      if (subtitleEl) subtitleEl.textContent = 'Variable única oficial de estratificación para este estamento';
+    } else if (estKey === 'estudiantes' && STATE.params.P12 === 'FORMA_1') {
+      STATE.selectedVarsByEstamento.estudiantes = ESTAMENTO_META.estudiantes.defaultVarsForma1.slice();
+      if (subtitleEl) subtitleEl.textContent = 'Forma 1 (Fija): Facultad × Nivel Agrupado × Modalidad';
+    } else {
+      if (subtitleEl) subtitleEl.textContent = 'Selecciona las variables para construir los estratos';
+    }
+
     const selected = STATE.selectedVarsByEstamento[estKey] || [];
 
-    // En Forma 1 de Estudiantes, destacamos las 3 variables oficiales pero permitimos ver todas
     const varsToShow = meta.variables.filter((v) => {
       if (estKey === 'estudiantes' && STATE.params.P12 === 'FORMA_1') {
         return v.forma === 1;
@@ -981,10 +1019,11 @@
     container.innerHTML = varsToShow
       .map((v) => {
         const isChecked = selected.includes(v.id);
+        const lockAttr = isSingleLockedVar || (estKey === 'estudiantes' && STATE.params.P12 === 'FORMA_1') ? 'disabled' : '';
         return `
         <label class="var-check-item ${isChecked ? 'checked' : ''}">
           <div class="var-check-left">
-            <input type="checkbox" class="chk-strat-var" value="${v.id}" ${isChecked ? 'checked' : ''} />
+            <input type="checkbox" class="chk-strat-var" value="${v.id}" ${isChecked ? 'checked' : ''} ${lockAttr} />
             <span>${v.label}</span>
           </div>
           <span class="var-type-tag ${v.type === 'quant' ? 'tag-quant' : 'tag-cat'}">
@@ -1055,16 +1094,17 @@
     pill.textContent = `${meta.icon} ${meta.label.toUpperCase()}`;
 
     if (estKey === 'estudiantes') {
+      const nEst = (STATE.filteredDatasets.estudiantes || []).length;
       desc.innerHTML =
         P.P12 === 'FORMA_1'
-          ? `<strong>P12 = Forma 1 Activa (Prioritaria):</strong> Estratificación oficial por <code>Facultad × Nivel Agrupado (Tecnológico, Universitario, Posgrado) × Modalidad</code> sobre los <strong>29,904</strong> estudiantes activos.`
-          : `<strong>P12 = Forma 2 Activa (Exploratoria Multivariada):</strong> Base enriquecida <code>Estudiantes_Enriquecido.xlsx</code> (97.91% enlace histórico) con soporte para variables demográficas y cuantitativas continuas.`;
+          ? `<strong>P12 = Forma 1 Activa (Prioritaria):</strong> Base oficial <code>Estudiantes.xlsx</code> (<strong>N = 29,904</strong> estudiantes) estratificada por <code>Facultad × Nivel Agrupado (Tecnológico, Universitario, Posgrado) × Modalidad</code>.`
+          : `<strong>P12 = Forma 2 Activa (Base Enriquecida):</strong> Archivo <code>Estudiantes_Enriquecido.xlsx</code> con <strong>N = ${formatNumber(nEst)} estudiantes enlazados</strong> (ΔN = ${formatNumber(nEst - 29904)} respecto a Forma 1) y selección libre de variables.`;
     } else if (estKey === 'docentes') {
-      desc.innerHTML = `<strong>Reglas P1–P4 Activas:</strong> P1 (Duplicados cátedra extra = <code>${P.P1}</code>) · P2 (Mismo contrato = <code>${P.P2}</code>) · P3 (Deduplicación exacta) · P4 (239 sin correo en Cátedra = <code>${P.P4}</code>) → <strong>N = ${formatNumber(STATE.filteredDatasets.docentes.length)} docentes</strong>.`;
+      desc.innerHTML = `<strong>Reglas P1–P4 Activas:</strong> P1 (Duplicados cátedra extra = <code>${P.P1}</code>) · P2 (Mismo contrato = <code>${P.P2}</code>) · P3 (Deduplicación exacta) · P4 (239 sin correo en Cátedra = <code>${P.P4}</code>) · Estratificación única: <code>Tipo de Vinculación</code> → <strong>N = ${formatNumber(STATE.filteredDatasets.docentes.length)} docentes</strong>.`;
     } else if (estKey === 'administrativos') {
-      desc.innerHTML = `<strong>Reglas P5–P9 Activas:</strong> P5 (19 sin cédula = <code>${P.P5}</code>) · P6 (Vacante 71720089 = <code>${P.P6}</code>) · P7 (70382234 = <code>${P.P7}</code>) · P8 (Conductor 71611587 = <code>${P.P8}</code>) · P9 (Estrategia = <code>${P.P9}</code>) → <strong>N = ${formatNumber(STATE.filteredDatasets.administrativos.length)} funcionarios</strong>.`;
+      desc.innerHTML = `<strong>Reglas P5–P9 Activas:</strong> P5 (19 sin cédula = <code>${P.P5}</code>) · P6 (Vacante 71720089 = <code>${P.P6}</code>) · P7 (70382234 = <code>${P.P7}</code>) · P8 (Conductor 71611587 = <code>${P.P8}</code>) · P9 (Estrategia = <code>${P.P9}</code>) · Estratificación única: <code>Nivel Jerárquico</code> → <strong>N = ${formatNumber(STATE.filteredDatasets.administrativos.length)} funcionarios</strong>.`;
     } else if (estKey === 'empleadores') {
-      desc.innerHTML = `<strong>Regla P10 Activa:</strong> Unidad estadística de muestreo = <code>${P.P10 === 'EMPRESA' ? 'Empresa única por NIT (N = 303)' : 'Jefe / Contacto directo (N = 531)'}</code>.`;
+      desc.innerHTML = `<strong>Regla P10 Activa:</strong> Unidad estadística de muestreo = <code>${P.P10 === 'EMPRESA' ? 'Empresa única por NIT (N = 303)' : 'Jefe / Contacto directo (N = 531)'}</code> · Sin variables de estratificación (Muestreo Aleatorio Simple Sin Reemplazo).`;
     } else if (estKey === 'graduados') {
       desc.innerHTML = `<strong>Regla P11 Activa:</strong> Graduados sin correo electrónico = <code>${P.P11 === 'EXCLUIR' ? 'Excluir (Marco contactable con correo: N = 3,276)' : 'No Excluir (Marco histórico total: N = 45,154)'}</code>.`;
     } else {
@@ -1513,9 +1553,53 @@
     const res = computeSamplingForEstamento(estKey);
     STATE.currentResult = res;
 
-    // Actualizar KPIs principales
-    document.getElementById('kpiPopulationN').textContent = formatNumber(res.N);
-    document.getElementById('kpiPopulationSub').textContent = `Estamento: ${ESTAMENTO_META[estKey].label}`;
+    // Actualizar banner de cambio inmediato en Estudiantes (Forma 1 vs Forma 2)
+    if (estKey === 'estudiantes') {
+      const isF1 = STATE.params.P12 === 'FORMA_1';
+      const headingEl = document.getElementById('studentFormaMainHeading');
+      const pillEl = document.getElementById('studentFormaStatusPill');
+      const diffBanner = document.getElementById('formaLiveDiffBanner');
+      const diffFile = document.getElementById('diffActiveFile');
+      const diffN = document.getElementById('diffActiveN');
+      const diffVars = document.getElementById('diffActiveVars');
+
+      if (headingEl) {
+        headingEl.innerHTML = isF1
+          ? `Forma 1 Activa: <code>Estudiantes.xlsx</code> (<strong>N = ${formatNumber(res.N)}</strong> estudiantes · <strong>${res.H} estratos</strong>)`
+          : `Forma 2 Activa: <code>Estudiantes_Enriquecido.xlsx</code> (<strong>N = ${formatNumber(res.N)}</strong> estudiantes con cruce · <strong>${res.H} estratos</strong>)`;
+      }
+      if (pillEl) {
+        pillEl.innerHTML = isF1
+          ? `Base Activa: <strong>Estudiantes.xlsx (N = 29,904)</strong>`
+          : `Base Activa: <strong>Estudiantes_Enriquecido.xlsx (N = ${formatNumber(res.N)} | ΔN = ${formatNumber(res.N - 29904)})</strong>`;
+      }
+      if (diffBanner) {
+        diffBanner.classList.toggle('mode-forma-1', isF1);
+        diffBanner.classList.toggle('mode-forma-2', !isF1);
+      }
+      if (diffFile) {
+        diffFile.textContent = isF1 ? 'Estudiantes.xlsx (Base Oficial)' : 'Estudiantes_Enriquecido.xlsx (Base Enriquecida)';
+      }
+      if (diffN) {
+        diffN.textContent = isF1
+          ? '29,904 estudiantes (100% del archivo original)'
+          : `${formatNumber(res.N)} estudiantes (${res.N - 29904 === 0 ? 'Todos' : formatNumber(res.N - 29904) + ' sin cruce histórico excluidos'})`;
+      }
+      if (diffVars) {
+        const activeVarNames = (STATE.selectedVarsByEstamento.estudiantes || []).join(' × ') || 'Sin estratificar (MAS)';
+        diffVars.textContent = `${activeVarNames} (H = ${res.H} estratos | Muestra n = ${formatNumber(res.nFinal)})`;
+      }
+    }
+
+    // Actualizar KPIs principales con animación de destello cuando cambia N o n
+    const kpiPopEl = document.getElementById('kpiPopulationN');
+    const prevNText = kpiPopEl ? kpiPopEl.textContent : '';
+    const newNText = formatNumber(res.N);
+    if (kpiPopEl) kpiPopEl.textContent = newNText;
+    document.getElementById('kpiPopulationSub').textContent =
+      estKey === 'estudiantes'
+        ? `${STATE.params.P12 === 'FORMA_1' ? 'Archivo: Estudiantes.xlsx' : 'Archivo: Estudiantes_Enriquecido.xlsx'}`
+        : `Estamento: ${ESTAMENTO_META[estKey].label}`;
 
     document.getElementById('kpiSampleNet').textContent = formatNumber(res.nNet);
     const fNet = res.N > 0 ? ((res.nNet / res.N) * 100).toFixed(2) : '0.00';
@@ -1527,6 +1611,14 @@
 
     document.getElementById('kpiStrataCount').textContent = formatNumber(res.H);
     document.getElementById('kpiStrataSub').textContent = `Factor FPC global: ${res.fpc.toFixed(4)}`;
+
+    if (prevNText && prevNText !== newNText) {
+      document.querySelectorAll('.kpi-card').forEach((card) => {
+        card.classList.remove('kpi-flash-update');
+        void card.offsetWidth;
+        card.classList.add('kpi-flash-update');
+      });
+    }
 
     // Actualizar muestra en la tarjeta superior activa
     const ribbonSampleEl = document.getElementById(`ribbonSample_${estKey}`);
@@ -1713,18 +1805,64 @@
 
   function syncModalInputsFromState() {
     Object.keys(STATE.params).forEach((pKey) => {
+      const val = STATE.params[pKey];
       const el = document.getElementById(`param_${pKey}`);
-      if (el) el.value = STATE.params[pKey];
+      if (el) el.value = val;
+
+      // Sincronizar tarjetas interactivas .param-choice-btn dentro del modal
+      document.querySelectorAll(`.param-choice-btn[data-param="${pKey}"]`).forEach((btn) => {
+        const isSelected = btn.getAttribute('data-val') === val;
+        btn.classList.toggle('active', isSelected);
+        const radioSpan = btn.querySelector('.choice-radio');
+        if (radioSpan) {
+          radioSpan.textContent = isSelected ? '●' : '○';
+        }
+      });
     });
 
     // Sincronizar tarjetas Forma 1 vs Forma 2 en Estudiantes
     const isForma1 = STATE.params.P12 === 'FORMA_1';
-    document.getElementById('cardForma1').classList.toggle('active', isForma1);
-    document.getElementById('cardForma2').classList.toggle('active', !isForma1);
+    const c1 = document.getElementById('cardForma1');
+    const c2 = document.getElementById('cardForma2');
+    if (c1) c1.classList.toggle('active', isForma1);
+    if (c2) c2.classList.toggle('active', !isForma1);
     const radios = document.querySelectorAll('input[name="radioP12Forma"]');
     radios.forEach((r) => {
       r.checked = r.value === STATE.params.P12;
     });
+
+    const scopeSel = document.getElementById('selectForma2Scope');
+    if (scopeSel) {
+      scopeSel.value = STATE.forma2Scope;
+    }
+  }
+
+  function applyParamOptionChange(pKey, newVal) {
+    if (!pKey || !newVal) return;
+    STATE.params[pKey] = newVal;
+
+    if (pKey === 'P12') {
+      if (STATE.params.P12 === 'FORMA_1') {
+        STATE.selectedVarsByEstamento.estudiantes = ESTAMENTO_META.estudiantes.defaultVarsForma1.slice();
+      } else {
+        STATE.selectedVarsByEstamento.estudiantes = ESTAMENTO_META.estudiantes.defaultVarsForma2.slice();
+      }
+    }
+    if (pKey === 'P9' && STATE.activeEstamento === 'administrativos') {
+      STATE.samplingConfig.design = STATE.params.P9 === 'CENSO' ? 'CENSO' : 'PROPORCIONAL';
+      const desSel = document.getElementById('selectSamplingDesign');
+      if (desSel) desSel.value = STATE.samplingConfig.design;
+    }
+
+    syncModalInputsFromState();
+    applyParameterizationRules();
+    renderVariablesChecklist();
+    runMainCalculationAndRender();
+
+    const feedbackEl = document.getElementById('modalLiveFeedbackText');
+    if (feedbackEl) {
+      feedbackEl.textContent = `✓ Parámetro ${pKey} actualizado a "${newVal}" — Poblaciones recalculadas`;
+    }
   }
 
   function resetParamsToDefaults() {
@@ -1742,11 +1880,21 @@
       P11: 'EXCLUIR',
       P12: 'FORMA_1'
     };
+    STATE.forma2Scope = 'LINKED_ALL';
     STATE.selectedVarsByEstamento.estudiantes = ESTAMENTO_META.estudiantes.defaultVarsForma1.slice();
+    STATE.selectedVarsByEstamento.docentes = ['tipo_vinculacion'];
+    STATE.selectedVarsByEstamento.administrativos = ['nivel_jerarquico'];
+    STATE.selectedVarsByEstamento.empleadores = [];
+    STATE.selectedVarsByEstamento.graduados = ['facultad', 'nivel_agrupado'];
     syncModalInputsFromState();
     applyParameterizationRules();
     renderVariablesChecklist();
     runMainCalculationAndRender();
+
+    const feedbackEl = document.getElementById('modalLiveFeedbackText');
+    if (feedbackEl) {
+      feedbackEl.textContent = '↺ Restaurados los 12 valores por defecto institucionales';
+    }
   }
 
   function bindEventListeners() {
@@ -1765,11 +1913,14 @@
         document.querySelectorAll('.estamento-card').forEach((c) => c.classList.remove('active'));
         card.classList.add('active');
 
-        // Ajustar diseño por defecto si es Administrativos y P9 = CENSO
+        // Ajustar diseño por defecto si es Administrativos y P9 = CENSO, o Empleadores (MAS)
         if (est === 'administrativos' && STATE.params.P9 === 'CENSO') {
           document.getElementById('selectSamplingDesign').value = 'CENSO';
           STATE.samplingConfig.design = 'CENSO';
-        } else if (STATE.samplingConfig.design === 'CENSO') {
+        } else if (est === 'empleadores' && STATE.samplingConfig.design !== 'CENSO') {
+          document.getElementById('selectSamplingDesign').value = 'MAS';
+          STATE.samplingConfig.design = 'MAS';
+        } else if (STATE.samplingConfig.design === 'CENSO' || STATE.samplingConfig.design === 'MAS') {
           document.getElementById('selectSamplingDesign').value = 'PROPORCIONAL';
           STATE.samplingConfig.design = 'PROPORCIONAL';
         }
@@ -1782,24 +1933,27 @@
     // Selector Forma 1 vs Forma 2 en Estudiantes (Pantalla Principal)
     document.querySelectorAll('input[name="radioP12Forma"]').forEach((radio) => {
       radio.addEventListener('change', (e) => {
-        STATE.params.P12 = e.target.value;
-        if (STATE.params.P12 === 'FORMA_1') {
-          STATE.selectedVarsByEstamento.estudiantes = ESTAMENTO_META.estudiantes.defaultVarsForma1.slice();
-        } else {
-          STATE.selectedVarsByEstamento.estudiantes = ESTAMENTO_META.estudiantes.defaultVarsForma2.slice();
-        }
-        syncModalInputsFromState();
-        applyParameterizationRules();
-        renderVariablesChecklist();
-        runMainCalculationAndRender();
+        applyParamOptionChange('P12', e.target.value);
       });
     });
 
-    document.getElementById('checkOnlyLinkedStudents').addEventListener('change', (e) => {
-      STATE.onlyLinkedStudentsForma2 = e.target.checked;
-      applyParameterizationRules();
-      runMainCalculationAndRender();
-    });
+    const scopeSel = document.getElementById('selectForma2Scope');
+    if (scopeSel) {
+      scopeSel.addEventListener('change', (e) => {
+        STATE.forma2Scope = e.target.value;
+        applyParameterizationRules();
+        runMainCalculationAndRender();
+      });
+    }
+
+    const chkLinked = document.getElementById('checkOnlyLinkedStudents');
+    if (chkLinked) {
+      chkLinked.addEventListener('change', (e) => {
+        STATE.onlyLinkedStudentsForma2 = e.target.checked;
+        applyParameterizationRules();
+        runMainCalculationAndRender();
+      });
+    }
 
     // Controles del Motor Estadístico
     document.getElementById('selectSamplingDesign').addEventListener('change', (e) => {
@@ -1947,9 +2101,12 @@
       computeAndRenderBifasico(true);
     });
 
-    // Modal de Parametrización Inicial P1–P12
+    // Modal de Parametrización Inicial P1–P12 (con delegación de eventos infalible)
     const modal = document.getElementById('modalParametrizacion');
-    const openModal = () => modal.classList.add('active');
+    const openModal = () => {
+      syncModalInputsFromState();
+      modal.classList.add('active');
+    };
     const closeModal = () => modal.classList.remove('active');
 
     document.getElementById('btnOpenParamsModal').addEventListener('click', openModal);
@@ -1958,27 +2115,36 @@
     document.getElementById('btnResetParamsModal').addEventListener('click', resetParamsToDefaults);
     document.getElementById('btnQuickResetDefaults').addEventListener('click', resetParamsToDefaults);
 
+    // Clic directo sobre cualquiera de las tarjetas de opción (.param-choice-btn) en P1-P12
+    modal.addEventListener('click', (e) => {
+      const choiceBtn = e.target.closest('.param-choice-btn');
+      if (choiceBtn) {
+        e.preventDefault();
+        const pKey = choiceBtn.getAttribute('data-param');
+        const val = choiceBtn.getAttribute('data-val');
+        applyParamOptionChange(pKey, val);
+        return;
+      }
+
+      // Clic sobre las pestañas de filtro por Estamento dentro del modal (.modal-filter-btn)
+      const filterBtn = e.target.closest('.modal-filter-btn');
+      if (filterBtn) {
+        e.preventDefault();
+        const filterVal = filterBtn.getAttribute('data-filter');
+        document.querySelectorAll('.modal-filter-btn').forEach((b) => b.classList.remove('active'));
+        filterBtn.classList.add('active');
+
+        document.querySelectorAll('#modalParamsScrollBody .param-section-group').forEach((sec) => {
+          const g = sec.getAttribute('data-group');
+          sec.style.display = filterVal === 'ALL' || g === filterVal ? 'block' : 'none';
+        });
+      }
+    });
+
     document.querySelectorAll('.param-input').forEach((sel) => {
       sel.addEventListener('change', (e) => {
         const pKey = e.target.id.replace('param_', '');
-        STATE.params[pKey] = e.target.value;
-
-        if (pKey === 'P12') {
-          if (STATE.params.P12 === 'FORMA_1') {
-            STATE.selectedVarsByEstamento.estudiantes = ESTAMENTO_META.estudiantes.defaultVarsForma1.slice();
-          } else {
-            STATE.selectedVarsByEstamento.estudiantes = ESTAMENTO_META.estudiantes.defaultVarsForma2.slice();
-          }
-        }
-        if (pKey === 'P9' && STATE.activeEstamento === 'administrativos') {
-          STATE.samplingConfig.design = STATE.params.P9 === 'CENSO' ? 'CENSO' : 'PROPORCIONAL';
-          document.getElementById('selectSamplingDesign').value = STATE.samplingConfig.design;
-        }
-
-        syncModalInputsFromState();
-        applyParameterizationRules();
-        renderVariablesChecklist();
-        runMainCalculationAndRender();
+        applyParamOptionChange(pKey, e.target.value);
       });
     });
 
@@ -2010,7 +2176,10 @@
 
   // Exponer funciones clave globalmente
   window.SIMER_APP = {
-    openParamsModal: () => document.getElementById('modalParametrizacion').classList.add('active'),
+    openParamsModal: () => {
+      syncModalInputsFromState();
+      document.getElementById('modalParametrizacion').classList.add('active');
+    },
     getState: () => STATE
   };
 
@@ -2023,10 +2192,11 @@
     renderVariablesChecklist();
     runMainCalculationAndRender();
 
-    // Renderizar fórmulas KaTeX estáticas en la página
+    // Renderizar fórmulas KaTeX estáticas únicamente en el contenedor principal (excluyendo el modal)
     setTimeout(() => {
-      if (window.renderMathInElement) {
-        window.renderMathInElement(document.body, {
+      const mainEl = document.querySelector('.main-workspace');
+      if (window.renderMathInElement && mainEl) {
+        window.renderMathInElement(mainEl, {
           delimiters: [
             { left: '$$', right: '$$', display: true },
             { left: '$', right: '$', display: false }

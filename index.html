@@ -47,19 +47,21 @@
             <span class="title-divider">—</span>
             <span class="title-full">Sistema Interactivo de Muestreo Estadístico para la Reacreditación Institucional</span>
           </h1>
-          <p class="executive-recipients">
-            <strong>Destinatarios Ejecutivos:</strong> PhD. Hernán Salazar <span class="role-muted">(Vicerrector de Docencia — Líder del Proceso)</span>
-            &nbsp;·&nbsp; Alexandra Montoya <span class="role-muted">(Directora de Gestión Académica)</span>
-          </p>
+          <div class="author-byline-header">
+            <span class="author-byline-tag">Autor y Diseño Estadístico:</span>
+            <strong class="author-byline-name">Marvin Luis Jiménez Narváez</strong>
+            <span class="author-byline-sep">·</span>
+            <span class="author-byline-role">Docente Ocasional, Departamento de Educación y Ciencias Básicas — Facultad de Ciencias Exactas y Aplicadas, ITM</span>
+          </div>
         </div>
       </div>
 
       <div class="header-actions">
-        <button id="btnOpenParamsModal" class="btn-param-trigger" title="Configurar los 12 parámetros institucionales de depuración de marcos muestrales (P1 a P12)">
+        <button type="button" id="btnOpenParamsModal" class="btn-param-trigger" title="Abrir ventana de parametrización de marcos muestrales (P1 a P12)">
           <span class="btn-icon">⚙️</span>
           <div class="btn-text-group">
             <span class="btn-label-main">Parametrización Inicial (P1–P12)</span>
-            <span class="btn-label-sub" id="paramActiveSummaryBadge">12 Reglas Oficiales Activas</span>
+            <span class="btn-label-sub" id="paramActiveSummaryBadge">Configurar Decisiones de Marco Muestral</span>
           </div>
         </button>
       </div>
@@ -248,10 +250,10 @@
       <div id="studentFormaPanel" class="student-forma-container">
         <div class="forma-header">
           <div>
-            <span class="section-eyebrow">PARÁMETRO P12 · ARQUITECTURA DE ESTRATIFICACIÓN EN ESTUDIANTES</span>
-            <h2 class="section-title-sm">Selección de Estrategia de Estratificación para Estudiantes ($N = 29,904$)</h2>
+            <span class="section-eyebrow">PARÁMETRO P12 · COMPARACIÓN INMEDIATA DE ESTRATIFICACIÓN EN ESTUDIANTES</span>
+            <h2 class="section-title-sm" id="studentFormaMainHeading">Forma 1 Activa: <code>Estudiantes.xlsx</code> ($N = 29,904$ estudiantes · 22 estratos)</h2>
           </div>
-          <span class="forma-link-badge">Enlace Histórico Consolidado: <strong>29,280 / 29,904 (97.91%)</strong></span>
+          <span class="forma-link-badge" id="studentFormaStatusPill">Base Activa: <strong>Estudiantes.xlsx (N = 29,904)</strong></span>
         </div>
 
         <div class="forma-cards-row">
@@ -259,12 +261,12 @@
             <input type="radio" name="radioP12Forma" value="FORMA_1" checked />
             <div class="forma-card-content">
               <div class="forma-card-title-row">
-                <span class="forma-tag-default">★ FORMA 1 (POR DEFECTO PRIORITARIA)</span>
-                <span class="forma-n-badge">$N = 29,904$ (100% cobertura)</span>
+                <span class="forma-tag-default">★ FORMA 1 (PRIORITARIA POR DEFECTO)</span>
+                <span class="forma-n-badge">Población: <strong>N = 29,904</strong></span>
               </div>
-              <h4>Facultad $\times$ Nivel Agrupado (Tecnológico, Universitario, Posgrado) $\times$ Modalidad</h4>
+              <h4>Archivo <code>Estudiantes.xlsx</code> — Facultad $\times$ Nivel Agrupado (Tecnológico, Universitario, Posgrado) $\times$ Modalidad</h4>
               <p>
-                Utiliza directamente la base oficial <code>Estudiantes.xlsx</code> agrupando <em>Especialización</em>, <em>Maestría</em> y <em>Doctorado</em> en un único nivel <strong>Posgrado</strong> ($1,069$ estudiantes), eliminando micro-estratos extremos y conformando $H = 22$ estratos altamente estables.
+                Trabaja sobre la totalidad de los <strong>29,904 estudiantes</strong> del archivo oficial <code>Estudiantes.xlsx</code>. Agrupa Especialización, Maestría y Doctorado en <strong>Posgrado</strong> ($1,069$ estudiantes), generando <strong>$H = 22$ estratos fijos</strong>.
               </p>
             </div>
           </label>
@@ -273,15 +275,31 @@
             <input type="radio" name="radioP12Forma" value="FORMA_2" />
             <div class="forma-card-content">
               <div class="forma-card-title-row">
-                <span class="forma-tag-alt">🔬 FORMA 2 (EXPLORACIÓN MULTIVARIADA &amp; ENRIQUECIDA)</span>
-                <span class="forma-n-badge"><code>Estudiantes_Enriquecido.xlsx</code></span>
+                <span class="forma-tag-alt">🔬 FORMA 2 (ARCHIVO ENRIQUECIDO)</span>
+                <span class="forma-n-badge">Población Enriquecida: <strong>N = 29,280</strong> (o <strong>23,898</strong>)</span>
               </div>
-              <h4>Escoger Otras Variables Categóricas o Cuantitativas para Estudiar Estratificación</h4>
+              <h4>Archivo <code>Estudiantes_Enriquecido.xlsx</code> — Escoger Otras Variables para Estudiar Estratificación</h4>
               <p>
-                Habilita las variables demográficas y académicas cruzadas con <code>Matriculados/</code>, <code>Inscritos/</code> y <code>Admitidos/</code>: <strong>Sexo</strong>, <strong>Estrato Socioeconómico</strong>, <strong>Ciclo Formativo / Semestre</strong>, <strong>Sede/Lugar</strong>, y variables cuantitativas (<strong>Promedio Acumulado</strong>, <strong>Edad</strong>, <strong>% Avance</strong>) con discretización óptima de Dalenius-Hodges.
+                Trabaja con los estudiantes que lograron cruzarse con las bases históricas (<strong>29,280 estudiantes</strong> en <code>Matriculados ∪ Inscritos ∪ Admitidos</code>, excluyendo los 624 sin cruce; o <strong>23,898</strong> con semestre/avance en <code>Matriculados</code>), habilitando <strong>Sexo, Estrato, Ciclo/Semestre, Sede, Promedio, Edad y % Avance</strong>.
               </p>
             </div>
           </label>
+        </div>
+
+        <!-- Barra de Cambio Inmediato Forma 1 vs Forma 2 -->
+        <div id="formaLiveDiffBanner" class="forma-live-diff-banner mode-forma-1">
+          <div class="forma-diff-item">
+            <span class="diff-label">Archivo Fuente Activo:</span>
+            <strong class="diff-val" id="diffActiveFile">Estudiantes.xlsx</strong>
+          </div>
+          <div class="forma-diff-item">
+            <span class="diff-label">Tamaño Poblacional ($N$):</span>
+            <strong class="diff-val" id="diffActiveN">29,904 estudiantes (100% del listado original)</strong>
+          </div>
+          <div class="forma-diff-item">
+            <span class="diff-label">Variables Activas ($H$ estratos):</span>
+            <strong class="diff-val" id="diffActiveVars">Facultad × Nivel Agrupado × Modalidad (H = 22)</strong>
+          </div>
         </div>
       </div>
 
@@ -387,12 +405,17 @@
               </div>
             </div>
 
-            <!-- Filtro de Enlazados en Forma 2 de Estudiantes -->
+            <!-- Selector de Cobertura Histórica en Forma 2 de Estudiantes -->
             <div id="forma2FilterBox" class="forma2-filter-box hidden">
-              <label class="checkbox-row">
-                <input type="checkbox" id="checkOnlyLinkedStudents" />
-                <span>Filtrar solo los <strong>29,280 estudiantes enlazados (97.91%)</strong> con historial completo en <code>Matriculados/Inscritos/Admitidos</code></span>
+              <label for="selectForma2Scope" class="control-label" style="color:#003865; margin-bottom:4px; display:block;">
+                <span>🔬 Universo Activo en <code>Estudiantes_Enriquecido.xlsx</code> (Forma 2):</span>
               </label>
+              <select id="selectForma2Scope" class="form-select" style="margin-bottom:6px;">
+                <option value="LINKED_ALL" selected>N = 29,280 — Con cruce histórico en Matriculados ∪ Inscritos ∪ Admitidos (-624 sin cruce)</option>
+                <option value="LINKED_MA">N = 23,898 — Solo con cruce completo en Matriculados MA_2021-1 a 2026-1 (con Semestre y % Avance)</option>
+                <option value="ALL_29904">N = 29,904 — Todos (incluyendo los 624 sin cruce como categoría aparte)</option>
+              </select>
+              <input type="checkbox" id="checkOnlyLinkedStudents" checked style="display:none;" />
             </div>
 
             <div id="stratVariablesChecklist" class="variables-checklist">
@@ -1025,7 +1048,7 @@
   </main>
 
   <!-- =====================================================================
-       MODAL DE PARAMETRIZACIÓN INICIAL OBLIGATORIA (P1 A P12)
+       MODAL DE PARAMETRIZACIÓN INICIAL INTERACTIVA (P1 A P12)
        ===================================================================== -->
   <div id="modalParametrizacion" class="modal-backdrop active" role="dialog" aria-modal="true" aria-labelledby="modalParamsTitle">
     <div class="modal-container">
@@ -1036,51 +1059,126 @@
           <img src="assets/logo_itm.png" alt="Escudo ITM" class="modal-logo" onerror="this.style.display='none'" />
           <div>
             <div class="brand-badges">
-              <span class="badge-pill badge-navy">PASO INICIAL OBLIGATORIO ANTES DEL ANÁLISIS</span>
-              <span class="badge-pill badge-teal">12 PARÁMETROS INSTITUCIONALES (P1–P12)</span>
+              <span class="badge-pill badge-navy">CONFIGURACIÓN INICIAL DE MARCOS MUESTRALES</span>
+              <span class="badge-pill badge-teal">12 DECISIONES INSTITUCIONALES (P1–P12)</span>
             </div>
             <h2 id="modalParamsTitle" class="modal-title">
-              Módulo de Parametrización Inicial y Depuración de Marcos Muestrales — SIMER-ITM
+              Parametrización de Depuración y Unidades de Muestreo — SIMER-ITM
             </h2>
             <p class="modal-subtitle">
-              Verifica o ajusta las reglas de decisión institucional sobre los casos atípicos detectados en la auditoría de las 5 bases de datos oficiales del ITM. Los valores preseleccionados corresponden a los <strong>criterios metodológicos por defecto</strong>.
+              En los archivos oficiales del ITM se detectaron registros duplicados, celdas sin correo electrónico y vacantes sin cédula. <strong>Haz clic sobre la opción que desees aplicar en cada caso</strong> (las opciones recomendadas ya están marcadas como <em>Por defecto</em>).
             </p>
           </div>
         </div>
-        <button type="button" id="btnCloseParamsModalTop" class="modal-close-btn" title="Confirmar y cerrar panel">&times;</button>
+        <button type="button" id="btnCloseParamsModalTop" class="modal-close-btn" title="Confirmar y cerrar ventana">&times;</button>
       </div>
 
-      <!-- Barra de Impacto en Vivo dentro del Modal -->
-      <div class="modal-live-summary">
-        <div class="modal-sum-item">
-          <span class="sum-label">🎓 Estudiantes ($N$)</span>
-          <span class="sum-val" id="modalN_estudiantes">29,904</span>
+      <!-- Guía Rápida de 3 Pasos + Filtros por Estamento + Resumen de Población N en Vivo -->
+      <div class="modal-top-bar">
+        <div class="modal-instructions-strip">
+          <div class="inst-step">
+            <span class="inst-num">1</span>
+            <span><strong>Filtra por estamento</strong> con los botones de abajo o revisa todos.</span>
+          </div>
+          <div class="inst-step">
+            <span class="inst-num">2</span>
+            <span><strong>Haz clic en cualquier tarjeta de opción</strong> para cambiar la regla y ver cómo cambia $N$ al instante.</span>
+          </div>
+          <div class="inst-step">
+            <span class="inst-num">3</span>
+            <span>Pulsa <strong>"Confirmar Parametrización e Ir al Sistema"</strong> abajo a la derecha.</span>
+          </div>
         </div>
-        <div class="modal-sum-item">
-          <span class="sum-label">👨‍🏫 Docentes ($N$)</span>
-          <span class="sum-val" id="modalN_docentes">1,462</span>
+
+        <!-- Barra de Impacto en Vivo dentro del Modal -->
+        <div class="modal-live-summary">
+          <div class="modal-sum-item">
+            <span class="sum-label">🎓 Estudiantes (N)</span>
+            <span class="sum-val" id="modalN_estudiantes">29,904</span>
+          </div>
+          <div class="modal-sum-item">
+            <span class="sum-label">👨‍🏫 Docentes (N)</span>
+            <span class="sum-val" id="modalN_docentes">1,462</span>
+          </div>
+          <div class="modal-sum-item">
+            <span class="sum-label">🏛️ Administrativos (N)</span>
+            <span class="sum-val" id="modalN_administrativos">211</span>
+          </div>
+          <div class="modal-sum-item">
+            <span class="sum-label">🏢 Empleadores (N)</span>
+            <span class="sum-val" id="modalN_empleadores">303</span>
+          </div>
+          <div class="modal-sum-item">
+            <span class="sum-label">🎖️ Graduados (N)</span>
+            <span class="sum-val" id="modalN_graduados">3,276</span>
+          </div>
         </div>
-        <div class="modal-sum-item">
-          <span class="sum-label">🏛️ Administrativos ($N$)</span>
-          <span class="sum-val" id="modalN_administrativos">211</span>
-        </div>
-        <div class="modal-sum-item">
-          <span class="sum-label">🏢 Empleadores ($N$)</span>
-          <span class="sum-val" id="modalN_empleadores">303</span>
-        </div>
-        <div class="modal-sum-item">
-          <span class="sum-label">🎖️ Graduados ($N$)</span>
-          <span class="sum-val" id="modalN_graduados">3,276</span>
+
+        <!-- Pestañas de Filtro por Estamento dentro del Modal -->
+        <div class="modal-filter-tabs" id="modalEstamentoFilterTabs">
+          <button type="button" class="modal-filter-btn active" data-filter="ALL">📋 Ver Todos (12)</button>
+          <button type="button" class="modal-filter-btn" data-filter="ESTUDIANTES">🎓 Estudiantes (P12)</button>
+          <button type="button" class="modal-filter-btn" data-filter="DOCENTES">👨‍🏫 Docentes (P1–P4)</button>
+          <button type="button" class="modal-filter-btn" data-filter="ADMINISTRATIVOS">🏛️ Administrativos (P5–P9)</button>
+          <button type="button" class="modal-filter-btn" data-filter="EMPLEADORES">🏢 Empleadores (P10)</button>
+          <button type="button" class="modal-filter-btn" data-filter="GRADUADOS">🎖️ Graduados (P11)</button>
         </div>
       </div>
 
       <!-- Cuerpo Escroleable con los 12 Parámetros (P1 a P12) -->
-      <div class="modal-body">
+      <div class="modal-body" id="modalParamsScrollBody">
 
-        <!-- GRUPO I: DOCENTES (P1 a P4) -->
-        <div class="param-section-group">
+        <!-- =================================================================
+             SECCIÓN ESTUDIANTES (P12)
+             ================================================================= -->
+        <div class="param-section-group" data-group="ESTUDIANTES">
+          <div class="param-group-header header-navy">
+            <h3>🎓 1. Estudiantes (<code>Estudiantes.xlsx</code> [29,904] vs. <code>Estudiantes_Enriquecido.xlsx</code> [29,280])</h3>
+            <span class="param-group-impact" id="modalGroupImpactEstudiantes">Marco resultante: 29,904 estudiantes (Forma 1)</span>
+          </div>
+
+          <div class="params-grid">
+            <!-- P12 -->
+            <div class="param-card param-card-wide">
+              <div class="param-card-top">
+                <span class="param-code">PARÁMETRO P12 · ESTUDIANTES</span>
+                <span class="param-default-badge">Valor por defecto: Forma 1 (N = 29,904)</span>
+              </div>
+              <h4>¿Con qué archivo y esquema de estratificación se trabajará para Estudiantes?</h4>
+              <p>La <strong>Forma 1</strong> trabaja con los <strong>29,904 estudiantes</strong> de <code>Estudiantes.xlsx</code> estratificados por <em>Facultad × Nivel Agrupado × Modalidad</em>. La <strong>Forma 2</strong> trabaja con los <strong>29,280 estudiantes</strong> cruzados en <code>Estudiantes_Enriquecido.xlsx</code> (-624 sin cruce histórico) para explorar otras variables.</p>
+
+              <div class="param-choices-row" data-param-group="P12">
+                <button type="button" class="param-choice-btn active" data-param="P12" data-val="FORMA_1">
+                  <div class="choice-top">
+                    <span class="choice-radio">●</span>
+                    <strong class="choice-title">Forma 1: Facultad × Nivel Agrupado × Modalidad</strong>
+                    <span class="choice-tag-default">Por defecto</span>
+                  </div>
+                  <span class="choice-desc">Archivo <code>Estudiantes.xlsx</code> completo · <strong>N = 29,904 estudiantes</strong> · 22 estratos</span>
+                </button>
+
+                <button type="button" class="param-choice-btn" data-param="P12" data-val="FORMA_2">
+                  <div class="choice-top">
+                    <span class="choice-radio">○</span>
+                    <strong class="choice-title">Forma 2: Explorar Otras Variables (Base Enriquecida)</strong>
+                  </div>
+                  <span class="choice-desc">Archivo <code>Estudiantes_Enriquecido.xlsx</code> · <strong>N = 29,280 estudiantes con cruce</strong> (o 23,898 en Matriculados)</span>
+                </button>
+              </div>
+              <select id="param_P12" class="form-select param-input hidden-select">
+                <option value="FORMA_1" selected>FORMA_1</option>
+                <option value="FORMA_2">FORMA_2</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <!-- =================================================================
+             SECCIÓN DOCENTES (P1 a P4)
+             ================================================================= -->
+        <div class="param-section-group" data-group="DOCENTES">
           <div class="param-group-header header-teal">
-            <h3>👨‍🏫 I. Parámetros de Depuración en Docentes (<code>Profesores.xlsx</code> — 1,778 filas crudas / 1,700 únicos)</h3>
+            <h3>👨‍🏫 2. Docentes / Profesores (<code>Profesores.xlsx</code> — 1,778 filas crudas / 1,700 cédulas únicas)</h3>
             <span class="param-group-impact" id="modalGroupImpactDocentes">Marco resultante: 1,462 docentes</span>
           </div>
 
@@ -1088,66 +1186,139 @@
             <!-- P1 -->
             <div class="param-card">
               <div class="param-card-top">
-                <span class="param-code">PARÁMETRO P1</span>
+                <span class="param-code">PARÁMETRO P1 · DUPLICADOS DISTINTO CONTRATO</span>
                 <span class="param-default-badge">Por defecto: Eliminar CÁTEDRA</span>
               </div>
-              <h4>Docentes duplicados con dos tipos distintos de contrato (<em>cátedra extra</em> — 78 docentes / 156 registros)</h4>
-              <p>Docentes de Carrera (13) u Ocasionales (65) que aparecen una segunda vez con contrato de <code>CÁTEDRA</code> por horas de cátedra extra. ¿Qué registro eliminar?</p>
-              <select id="param_P1" class="form-select param-input">
-                <option value="CATEDRA" selected>CÁTEDRA (Por defecto — Conservar vinculación principal Carrera/Ocasional)</option>
-                <option value="OTRO">El otro (Eliminar CARRERA / OCASIONAL y conservar CÁTEDRA)</option>
-                <option value="AMBOS">Conservar ambos registros (1,778 unidades de contrato)</option>
-              </select>
-            </div>
-
-            <!-- P2 -->
-            <div class="param-card">
-              <div class="param-card-top">
-                <span class="param-code">PARÁMETRO P2</span>
-                <span class="param-default-badge">Por defecto: Eliminar @correo.itm</span>
+              <h4>78 docentes aparecen duplicados (156 filas) con dos tipos distintos de contrato (Carrera/Ocasional + <em>Cátedra extra</em>). ¿Qué registro se elimina?</h4>
+              <p>Estratificación del estamento: exclusivamente por <strong>Tipo de Vinculación</strong>.</p>
+              <div class="param-choices-col" data-param-group="P1">
+                <button type="button" class="param-choice-btn active" data-param="P1" data-val="CATEDRA">
+                  <div class="choice-top">
+                    <span class="choice-radio">●</span>
+                    <strong class="choice-title">Eliminar el registro de CÁTEDRA</strong>
+                    <span class="choice-tag-default">Por defecto</span>
+                  </div>
+                  <span class="choice-desc">Conserva su vinculación principal de Carrera (13) u Ocasional (65) (-78 duplicados)</span>
+                </button>
+                <button type="button" class="param-choice-btn" data-param="P1" data-val="OTRO">
+                  <div class="choice-top">
+                    <span class="choice-radio">○</span>
+                    <strong class="choice-title">Eliminar el otro (Carrera / Ocasional)</strong>
+                  </div>
+                  <span class="choice-desc">Elimina el registro de Carrera/Ocasional y deja al docente clasificado en CÁTEDRA</span>
+                </button>
+                <button type="button" class="param-choice-btn" data-param="P1" data-val="AMBOS">
+                  <div class="choice-top">
+                    <span class="choice-radio">○</span>
+                    <strong class="choice-title">Conservar ambos registros</strong>
+                  </div>
+                  <span class="choice-desc">Trata el contrato como unidad muestral (mantiene las 156 filas)</span>
+                </button>
               </div>
-              <h4>Docentes duplicados con la misma categoría en tipo de contrato y distinto dominio de correo</h4>
-              <p>Si un docente presenta dos registros con el mismo tipo de contrato pero diferente correo institucional, ¿qué registro eliminar?</p>
-              <select id="param_P2" class="form-select param-input">
-                <option value="CORREO_ITM" selected>@correo.itm (Por defecto — Conservar dominio administrativo @itm.edu.co)</option>
-                <option value="ITM">@itm (Eliminar @itm.edu.co y conservar @correo.itm.edu.co)</option>
-                <option value="AMBOS">Eliminar ambos registros</option>
-              </select>
-            </div>
-
-            <!-- P3 -->
-            <div class="param-card">
-              <div class="param-card-top">
-                <span class="param-code">PARÁMETRO P3</span>
-                <span class="param-default-badge">Regla Fija Institucional</span>
-              </div>
-              <h4>Docentes con varios registros totalmente iguales (duplicados exactos de fila)</h4>
-              <p>Deduplicación primaria para registros idénticos en todos los campos dentro del archivo fuente:</p>
-              <select id="param_P3" class="form-select param-input">
-                <option value="DEJAR_UNO" selected>Dejar uno solo de ellos (Deduplicación exacta activa)</option>
+              <select id="param_P1" class="form-select param-input hidden-select">
+                <option value="CATEDRA" selected>CATEDRA</option>
+                <option value="OTRO">OTRO</option>
+                <option value="AMBOS">AMBOS</option>
               </select>
             </div>
 
             <!-- P4 -->
             <div class="param-card">
               <div class="param-card-top">
-                <span class="param-code">PARÁMETRO P4</span>
+                <span class="param-code">PARÁMETRO P4 · DOCENTES SIN CORREO</span>
                 <span class="param-default-badge">Por defecto: Excluir</span>
               </div>
-              <h4>Docentes con celda vacía en correo electrónico (239 registros en Cátedra sin correo)</h4>
-              <p>En <code>Profesores.xlsx</code> hay 239 registros de Cátedra sin dirección de correo electrónico para envío digital del instrumento:</p>
-              <select id="param_P4" class="form-select param-input">
-                <option value="EXCLUIR" selected>Excluir (Por defecto — Marco contactable con correo: N = 1,462)</option>
-                <option value="NO_EXCLUIR">No Excluir (Incluir en el marco muestral: N = 1,700)</option>
+              <h4>Hay 239 registros de docentes en Cátedra con la celda vacía en Correo Electrónico. ¿Cómo tratarlos?</h4>
+              <p>Si resultan seleccionados en la muestra no habría dirección de correo electrónico en la base para enviarles la encuesta.</p>
+              <div class="param-choices-col" data-param-group="P4">
+                <button type="button" class="param-choice-btn active" data-param="P4" data-val="EXCLUIR">
+                  <div class="choice-top">
+                    <span class="choice-radio">●</span>
+                    <strong class="choice-title">Excluir docentes sin correo electrónico</strong>
+                    <span class="choice-tag-default">Por defecto</span>
+                  </div>
+                  <span class="choice-desc">Marco muestral contactable con correo: <strong>N = 1,462 docentes únicos</strong></span>
+                </button>
+                <button type="button" class="param-choice-btn" data-param="P4" data-val="NO_EXCLUIR">
+                  <div class="choice-top">
+                    <span class="choice-radio">○</span>
+                    <strong class="choice-title">No Excluir (Incluir en la población)</strong>
+                  </div>
+                  <span class="choice-desc">Mantiene los 239 docentes sin correo: <strong>N = 1,700 docentes únicos</strong></span>
+                </button>
+              </div>
+              <select id="param_P4" class="form-select param-input hidden-select">
+                <option value="EXCLUIR" selected>EXCLUIR</option>
+                <option value="NO_EXCLUIR">NO_EXCLUIR</option>
+              </select>
+            </div>
+
+            <!-- P2 -->
+            <div class="param-card">
+              <div class="param-card-top">
+                <span class="param-code">PARÁMETRO P2 · DUPLICADOS MISMO CONTRATO</span>
+                <span class="param-default-badge">Por defecto: @correo.itm</span>
+              </div>
+              <h4>Si aparecen docentes duplicados con la misma categoría de contrato pero distinto dominio de correo, ¿cuál eliminar?</h4>
+              <p>No se presenta en el archivo actual (0 casos), pero queda parametrizado preventivamente para futuros cargues.</p>
+              <div class="param-choices-col" data-param-group="P2">
+                <button type="button" class="param-choice-btn active" data-param="P2" data-val="CORREO_ITM">
+                  <div class="choice-top">
+                    <span class="choice-radio">●</span>
+                    <strong class="choice-title">Eliminar @correo.itm (Conservar @itm.edu.co)</strong>
+                    <span class="choice-tag-default">Por defecto</span>
+                  </div>
+                </button>
+                <button type="button" class="param-choice-btn" data-param="P2" data-val="ITM">
+                  <div class="choice-top">
+                    <span class="choice-radio">○</span>
+                    <strong class="choice-title">Eliminar @itm (Conservar @correo.itm.edu.co)</strong>
+                  </div>
+                </button>
+                <button type="button" class="param-choice-btn" data-param="P2" data-val="AMBOS">
+                  <div class="choice-top">
+                    <span class="choice-radio">○</span>
+                    <strong class="choice-title">Eliminar ambos registros</strong>
+                  </div>
+                </button>
+              </div>
+              <select id="param_P2" class="form-select param-input hidden-select">
+                <option value="CORREO_ITM" selected>CORREO_ITM</option>
+                <option value="ITM">ITM</option>
+                <option value="AMBOS">AMBOS</option>
+              </select>
+            </div>
+
+            <!-- P3 -->
+            <div class="param-card">
+              <div class="param-card-top">
+                <span class="param-code">PARÁMETRO P3 · FILAS 100% IDÉNTICAS</span>
+                <span class="param-default-badge">Regla Fija</span>
+              </div>
+              <h4>Docentes con varios registros totalmente iguales en todas sus columnas:</h4>
+              <p>Por definición metodológica, si existen filas exactamente idénticas se conserva un único registro.</p>
+              <div class="param-choices-col" data-param-group="P3">
+                <button type="button" class="param-choice-btn active" data-param="P3" data-val="DEJAR_UNO">
+                  <div class="choice-top">
+                    <span class="choice-radio">●</span>
+                    <strong class="choice-title">Dejar uno solo de ellos (Deduplicación exacta)</strong>
+                    <span class="choice-tag-default">Activo</span>
+                  </div>
+                </button>
+              </div>
+              <select id="param_P3" class="form-select param-input hidden-select">
+                <option value="DEJAR_UNO" selected>DEJAR_UNO</option>
               </select>
             </div>
           </div>
         </div>
 
-        <!-- GRUPO II: ADMINISTRATIVOS (P5 a P9) -->
-        <div class="param-section-group">
+        <!-- =================================================================
+             SECCIÓN ADMINISTRATIVOS (P5 a P9)
+             ================================================================= -->
+        <div class="param-section-group" data-group="ADMINISTRATIVOS">
           <div class="param-group-header header-emerald">
-            <h3>🏛️ II. Parámetros de Depuración y Selección en Administrativos (<code>Administrativos.xlsx</code> — 232 filas en 2 hojas)</h3>
+            <h3>🏛️ 3. Administrativos (<code>Administrativos.xlsx</code> — 232 filas: 9 Rectoría + 223 Administrativos)</h3>
             <span class="param-group-impact" id="modalGroupImpactAdmin">Marco resultante: 211 administrativos (Censo)</span>
           </div>
 
@@ -1155,122 +1326,230 @@
             <!-- P5 -->
             <div class="param-card">
               <div class="param-card-top">
-                <span class="param-code">PARÁMETRO P5</span>
+                <span class="param-code">PARÁMETRO P5 · 19 VACANTES SIN CÉDULA</span>
                 <span class="param-default-badge">Por defecto: Excluir</span>
               </div>
-              <h4>Administrativos en hoja <code>ADMINISTRATIVOS</code> con <code>CÉDULA</code> vacía y valor <code>BNLE</code>, <code>ANTIOQUIA 3</code> o <code>Vacante</code> sin correo (19 registros)</h4>
-              <p>Corresponden a plazas vacantes de planta sin funcionario titular asignado ni correo electrónico:</p>
-              <select id="param_P5" class="form-select param-input">
-                <option value="EXCLUIR" selected>Excluir (Por defecto — Descartar las 19 plazas vacantes sin cédula)</option>
-                <option value="NO_EXCLUIR">No Excluir (Conservar las 19 plazas vacantes)</option>
+              <h4>19 registros en hoja <code>ADMINISTRATIVOS</code> con <code>CÉDULA</code> vacía, sin correo y con texto <code>BNLE</code>, <code>ANTIOQUIA 3</code> o <code>Vacante</code>:</h4>
+              <p>Son cargos de planta vacantes sin persona asignada.</p>
+              <div class="param-choices-row" data-param-group="P5">
+                <button type="button" class="param-choice-btn active" data-param="P5" data-val="EXCLUIR">
+                  <div class="choice-top">
+                    <span class="choice-radio">●</span>
+                    <strong class="choice-title">Excluir (-19 vacantes)</strong>
+                    <span class="choice-tag-default">Por defecto</span>
+                  </div>
+                </button>
+                <button type="button" class="param-choice-btn" data-param="P5" data-val="NO_EXCLUIR">
+                  <div class="choice-top">
+                    <span class="choice-radio">○</span>
+                    <strong class="choice-title">No Excluir (+19 filas)</strong>
+                  </div>
+                </button>
+              </div>
+              <select id="param_P5" class="form-select param-input hidden-select">
+                <option value="EXCLUIR" selected>EXCLUIR</option>
+                <option value="NO_EXCLUIR">NO_EXCLUIR</option>
               </select>
             </div>
 
             <!-- P6 -->
             <div class="param-card">
               <div class="param-card-top">
-                <span class="param-code">PARÁMETRO P6</span>
+                <span class="param-code">PARÁMETRO P6 · CÉDULA 71720089 (VCACANTE)</span>
                 <span class="param-default-badge">Por defecto: Excluir</span>
               </div>
-              <h4>Administrativo con <code>CÉDULA 71720089</code> sin correo y nombre <code>VCACANTE - Robinson Sánchez Zambrano</code></h4>
-              <p>El funcionario ya aparece activo con correo en el cargo #87 (<em>Encargo - Profesional Especializado</em>), mientras la plaza #166 (<em>Técnico Administrativo</em>) está en vacancia temporal sin correo:</p>
-              <select id="param_P6" class="form-select param-input">
-                <option value="EXCLUIR" selected>Excluir (Por defecto — Evitar duplicidad y conservar solo su cargo activo con correo)</option>
-                <option value="NO_EXCLUIR">No Excluir (Conservar también el registro en vacante temporal)</option>
+              <h4>Registro con <code>CÉDULA 71720089</code> sin correo y nombre <code>VCACANTE (Robinson Sánchez Zambrano)</code>:</h4>
+              <p>Este funcionario ya aparece activo con correo en el cargo #87 (Encargo), por lo que la fila #166 sin correo duplica su cédula.</p>
+              <div class="param-choices-row" data-param-group="P6">
+                <button type="button" class="param-choice-btn active" data-param="P6" data-val="EXCLUIR">
+                  <div class="choice-top">
+                    <span class="choice-radio">●</span>
+                    <strong class="choice-title">Excluir fila vacante (-1)</strong>
+                    <span class="choice-tag-default">Por defecto</span>
+                  </div>
+                </button>
+                <button type="button" class="param-choice-btn" data-param="P6" data-val="NO_EXCLUIR">
+                  <div class="choice-top">
+                    <span class="choice-radio">○</span>
+                    <strong class="choice-title">No Excluir (+1 fila)</strong>
+                  </div>
+                </button>
+              </div>
+              <select id="param_P6" class="form-select param-input hidden-select">
+                <option value="EXCLUIR" selected>EXCLUIR</option>
+                <option value="NO_EXCLUIR">NO_EXCLUIR</option>
               </select>
             </div>
 
             <!-- P7 -->
             <div class="param-card">
               <div class="param-card-top">
-                <span class="param-code">PARÁMETRO P7</span>
+                <span class="param-code">PARÁMETRO P7 · CÉDULA 70382234 ("claudia patricia")</span>
                 <span class="param-default-badge">Por defecto: No Excluir</span>
               </div>
-              <h4>Administrativo con <code>CÉDULA 70382234</code> con <code>DEPENDENCIA = "claudia patricia"</code></h4>
-              <p>Funcionario titular válido con correo institucional (<em>Director Administrativo</em>, planta #15) donde se digitó por error un nombre propio en la columna <code>DEPENDENCIA</code>:</p>
-              <select id="param_P7" class="form-select param-input">
-                <option value="NO_EXCLUIR" selected>No Excluir (Por defecto — Conservar funcionario recodificando a Dirección Administrativa)</option>
-                <option value="EXCLUIR">Excluir (Descartar registro)</option>
+              <h4>Registro con <code>CÉDULA 70382234</code> que tiene en <code>DEPENDENCIA</code> el valor <code>"claudia patricia"</code>:</h4>
+              <p>Es un Director Administrativo real con correo válido; además la única variable de estratificación en Administrativos es el <strong>Nivel Jerárquico</strong>.</p>
+              <div class="param-choices-row" data-param-group="P7">
+                <button type="button" class="param-choice-btn active" data-param="P7" data-val="NO_EXCLUIR">
+                  <div class="choice-top">
+                    <span class="choice-radio">●</span>
+                    <strong class="choice-title">No Excluir (Conservar)</strong>
+                    <span class="choice-tag-default">Por defecto</span>
+                  </div>
+                </button>
+                <button type="button" class="param-choice-btn" data-param="P7" data-val="EXCLUIR">
+                  <div class="choice-top">
+                    <span class="choice-radio">○</span>
+                    <strong class="choice-title">Excluir (-1 funcionario)</strong>
+                  </div>
+                </button>
+              </div>
+              <select id="param_P7" class="form-select param-input hidden-select">
+                <option value="NO_EXCLUIR" selected>NO_EXCLUIR</option>
+                <option value="EXCLUIR">EXCLUIR</option>
               </select>
             </div>
 
             <!-- P8 -->
             <div class="param-card">
               <div class="param-card-top">
-                <span class="param-code">PARÁMETRO P8</span>
+                <span class="param-code">PARÁMETRO P8 · CÉDULA 71611587 (CONDUCTOR SIN CORREO)</span>
                 <span class="param-default-badge">Por defecto: Excluir</span>
               </div>
-              <h4>Administrativo en hoja <code>RECTORIA</code> con <code>CÉDULA 71611587</code> — Conductor sin correo electrónico</h4>
-              <p>Único funcionario de los 9 registros de la hoja <code>RECTORIA</code> que no registra correo electrónico institucional:</p>
-              <select id="param_P8" class="form-select param-input">
-                <option value="EXCLUIR" selected>Excluir (Por defecto — Quedan 8 funcionarios con correo en Rectoría)</option>
-                <option value="NO_EXCLUIR">No Excluir (Conservar los 9 funcionarios en Rectoría)</option>
+              <h4>Registro en hoja <code>RECTORIA</code> con <code>CÉDULA 71611587</code> (Conductor) que no tiene correo electrónico:</h4>
+              <p>Es el único de los 9 funcionarios de Rectoría que tiene la celda de correo vacía.</p>
+              <div class="param-choices-row" data-param-group="P8">
+                <button type="button" class="param-choice-btn active" data-param="P8" data-val="EXCLUIR">
+                  <div class="choice-top">
+                    <span class="choice-radio">●</span>
+                    <strong class="choice-title">Excluir (-1 sin correo)</strong>
+                    <span class="choice-tag-default">Por defecto</span>
+                  </div>
+                </button>
+                <button type="button" class="param-choice-btn" data-param="P8" data-val="NO_EXCLUIR">
+                  <div class="choice-top">
+                    <span class="choice-radio">○</span>
+                    <strong class="choice-title">No Excluir (+1 fila)</strong>
+                  </div>
+                </button>
+              </div>
+              <select id="param_P8" class="form-select param-input hidden-select">
+                <option value="EXCLUIR" selected>EXCLUIR</option>
+                <option value="NO_EXCLUIR">NO_EXCLUIR</option>
               </select>
             </div>
 
             <!-- P9 -->
             <div class="param-card param-card-wide">
               <div class="param-card-top">
-                <span class="param-code">PARÁMETRO P9</span>
-                <span class="param-default-badge">Por defecto: Censo Institucional</span>
+                <span class="param-code">PARÁMETRO P9 · ESTRATEGIA EN ADMINISTRATIVOS</span>
+                <span class="param-default-badge">Por defecto: Censo (n = N = 211)</span>
               </div>
-              <h4>Administrativos — Estrategia de Selección Estadística</h4>
-              <p>Dado el tamaño reducido del estamento administrativo depurado ($N = 211$) y su alta heterogeneidad funcional, define si se aplica <strong>Censo ($n = N$)</strong> o <strong>Muestreo Aleatorio Estratificado</strong>:</p>
-              <select id="param_P9" class="form-select param-input">
-                <option value="CENSO" selected>Censo (Por defecto — Encuestar al 100% de los administrativos válidos: n = N)</option>
-                <option value="MUESTREO">Muestreo Aleatorio Estratificado por Nivel Jerárquico / Hoja</option>
+              <h4>¿En Administrativos se aplicará Censo Institucional o Muestreo Aleatorio Estratificado por Nivel Jerárquico?</h4>
+              <p>Si se elige muestra probabilística, la única variable de estratificación habilitada para Administrativos es el <strong>Nivel Jerárquico</strong> (Directivo, Profesional, Técnico, Asistencial).</p>
+              <div class="param-choices-row" data-param-group="P9">
+                <button type="button" class="param-choice-btn active" data-param="P9" data-val="CENSO">
+                  <div class="choice-top">
+                    <span class="choice-radio">●</span>
+                    <strong class="choice-title">Censo Institucional Completo (n = N = 211)</strong>
+                    <span class="choice-tag-default">Por defecto</span>
+                  </div>
+                  <span class="choice-desc">Se convoca al 100% de los funcionarios administrativos depurados (error muestral = 0%)</span>
+                </button>
+                <button type="button" class="param-choice-btn" data-param="P9" data-val="MUESTREO">
+                  <div class="choice-top">
+                    <span class="choice-radio">○</span>
+                    <strong class="choice-title">Muestreo Aleatorio Estratificado por Nivel Jerárquico</strong>
+                  </div>
+                  <span class="choice-desc">Calcula muestra probabilística estratificada en los 4 niveles jerárquicos (n = 138 al 95% / 5%)</span>
+                </button>
+              </div>
+              <select id="param_P9" class="form-select param-input hidden-select">
+                <option value="CENSO" selected>CENSO</option>
+                <option value="MUESTREO">MUESTREO</option>
               </select>
             </div>
           </div>
         </div>
 
-        <!-- GRUPO III: EMPLEADORES (P10), GRADUADOS (P11) Y ESTUDIANTES (P12) -->
-        <div class="param-section-group">
+        <!-- =================================================================
+             SECCIÓN EMPLEADORES (P10) Y GRADUADOS (P11)
+             ================================================================= -->
+        <div class="param-section-group" data-group="EMPLEADORES">
           <div class="param-group-header header-navy">
-            <h3>🏢🎖️🎓 III. Parámetros de Unidad Muestral en Empleadores (P10), Graduados (P11) y Estudiantes (P12)</h3>
-            <span class="param-group-impact">Configuración Estructural</span>
+            <h3>🏢 4. Empleadores (<code>Empleadores.xlsx</code> — 303 Empresas por NIT / 531 Jefes directos)</h3>
+            <span class="param-group-impact" id="modalGroupImpactEmpleadores">Unidad activa: Empresa (N = 303)</span>
           </div>
 
           <div class="params-grid">
             <!-- P10 -->
-            <div class="param-card">
-              <div class="param-card-top">
-                <span class="param-code">PARÁMETRO P10 · EMPLEADORES</span>
-                <span class="param-default-badge">Por defecto: Empresa (303)</span>
-              </div>
-              <h4>Empleadores — Unidad estadística a encuestar (<code>Empleadores.xlsx</code>)</h4>
-              <p>¿La unidad de muestreo es la <strong>Empresa única por NIT ($N = 303$)</strong> o cada <strong>Jefe/Contacto directo ($N = 531$)</strong>?</p>
-              <select id="param_P10" class="form-select param-input">
-                <option value="EMPRESA" selected>Empresa (Por defecto — Marco deduplicado por NIT único: N = 303 empresas)</option>
-                <option value="JEFE">Jefe (Contacto directo — Marco de todos los jefes registrados: N = 531 contactos)</option>
-              </select>
-            </div>
-
-            <!-- P11 -->
-            <div class="param-card">
-              <div class="param-card-top">
-                <span class="param-code">PARÁMETRO P11 · GRADUADOS</span>
-                <span class="param-default-badge">Por defecto: Excluir sin correo</span>
-              </div>
-              <h4>Graduados sin correo electrónico (<code>Graduados.xlsx</code> — 45,154 únicos con <code>Último registro = 1</code>)</h4>
-              <p>De los 45,154 graduados únicos, <strong>3,276 tienen correo electrónico</strong> y <strong>41,878 tienen celda vacía en correo</strong>:</p>
-              <select id="param_P11" class="form-select param-input">
-                <option value="EXCLUIR" selected>Excluir (Por defecto — Marco efectivo contactable con correo: N = 3,276)</option>
-                <option value="NO_EXCLUIR">No Excluir (Marco histórico total de graduados únicos: N = 45,154)</option>
-              </select>
-            </div>
-
-            <!-- P12 -->
             <div class="param-card param-card-wide">
               <div class="param-card-top">
-                <span class="param-code">PARÁMETRO P12 · ESTUDIANTES (PRIORIDAD)</span>
-                <span class="param-default-badge">Por defecto: Forma 1</span>
+                <span class="param-code">PARÁMETRO P10 · UNIDAD ESTADÍSTICA EN EMPLEADORES</span>
+                <span class="param-default-badge">Por defecto: Empresa (N = 303)</span>
               </div>
-              <h4>Estudiantes — Forma de Estratificación (<code>Estudiantes.xlsx</code> vs. <code>Estudiantes_Enriquecido.xlsx</code>)</h4>
-              <p>Selecciona la arquitectura de estratificación para los $29,904$ estudiantes activos (también conmutable en cualquier momento desde la pantalla principal):</p>
-              <select id="param_P12" class="form-select param-input">
-                <option value="FORMA_1" selected>Forma 1 (Por defecto): Facultad × Nivel Agrupado (Tecnológico, Universitario, Posgrado) × Modalidad (Estudiantes.xlsx = 29,904)</option>
-                <option value="FORMA_2">Forma 2: Escoger otras variables categóricas o cuantitativas para estudiar estratificación (Estudiantes_Enriquecido.xlsx)</option>
+              <h4>¿Cuál es la unidad estadística que será encuestada en el estamento de Empleadores?</h4>
+              <p>El archivo <code>Empleadores.xlsx</code> contiene 531 filas de contactos de jefes distribuidas en 303 empresas únicas (NIT) y no posee variables de estratificación (se aplica Muestreo Aleatorio Simple Sin Reemplazo o Censo).</p>
+              <div class="param-choices-row" data-param-group="P10">
+                <button type="button" class="param-choice-btn active" data-param="P10" data-val="EMPRESA">
+                  <div class="choice-top">
+                    <span class="choice-radio">●</span>
+                    <strong class="choice-title">Empresa (Deduplicada por NIT único: N = 303)</strong>
+                    <span class="choice-tag-default">Por defecto</span>
+                  </div>
+                  <span class="choice-desc">Cada organización empleadora tiene igual probabilidad de selección (n = 170 al 95% / 5%)</span>
+                </button>
+                <button type="button" class="param-choice-btn" data-param="P10" data-val="JEFE">
+                  <div class="choice-top">
+                    <span class="choice-radio">○</span>
+                    <strong class="choice-title">Jefe Inmediato (Todos los contactos: N = 531)</strong>
+                  </div>
+                  <span class="choice-desc">Cada contacto de jefe directo es una unidad muestral independiente (n = 224 al 95% / 5%)</span>
+                </button>
+              </div>
+              <select id="param_P10" class="form-select param-input hidden-select">
+                <option value="EMPRESA" selected>EMPRESA</option>
+                <option value="JEFE">JEFE</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <div class="param-section-group" data-group="GRADUADOS">
+          <div class="param-group-header header-navy">
+            <h3>🎖️ 5. Graduados / Egresados (<code>Graduados.xlsx</code> — 45,154 graduados únicos con <code>Último registro = 1</code>)</h3>
+            <span class="param-group-impact" id="modalGroupImpactGraduados">Marco resultante: 3,276 graduados con correo</span>
+          </div>
+
+          <div class="params-grid">
+            <!-- P11 -->
+            <div class="param-card param-card-wide">
+              <div class="param-card-top">
+                <span class="param-code">PARÁMETRO P11 · GRADUADOS SIN CORREO ELECTRÓNICO</span>
+                <span class="param-default-badge">Por defecto: Excluir sin correo (N = 3,276)</span>
+              </div>
+              <h4>De los 45,154 graduados únicos del ITM, 3,276 tienen correo electrónico y 41,878 tienen vacía la celda de correo. ¿Se excluyen los graduados sin correo?</h4>
+              <p>Estratificación disponible para Graduados: <strong>Facultad × Nivel Agrupado (Tecnológico, Universitario, Posgrado) × Modalidad</strong>.</p>
+              <div class="param-choices-row" data-param-group="P11">
+                <button type="button" class="param-choice-btn active" data-param="P11" data-val="EXCLUIR">
+                  <div class="choice-top">
+                    <span class="choice-radio">●</span>
+                    <strong class="choice-title">Excluir graduados sin correo electrónico (Marco Contactable)</strong>
+                    <span class="choice-tag-default">Por defecto</span>
+                  </div>
+                  <span class="choice-desc">Trabaja sobre los <strong>N = 3,276 graduados con correo</strong> (n = 345 al 95% / 5%)</span>
+                </button>
+                <button type="button" class="param-choice-btn" data-param="P11" data-val="NO_EXCLUIR">
+                  <div class="choice-top">
+                    <span class="choice-radio">○</span>
+                    <strong class="choice-title">No Excluir (Marco Histórico Total de Graduados)</strong>
+                  </div>
+                  <span class="choice-desc">Incluye los 41,878 sin correo: <strong>N = 45,154 graduados únicos</strong> (n = 381 al 95% / 5%)</span>
+                </button>
+              </div>
+              <select id="param_P11" class="form-select param-input hidden-select">
+                <option value="EXCLUIR" selected>EXCLUIR</option>
+                <option value="NO_EXCLUIR">NO_EXCLUIR</option>
               </select>
             </div>
           </div>
@@ -1283,21 +1562,30 @@
         <button type="button" id="btnResetParamsModal" class="btn-outline">
           ↺ Restaurar los 12 Valores por Defecto
         </button>
-        <button type="button" id="btnConfirmParamsModal" class="btn-action-primary" style="width: auto; padding: 12px 28px;">
-          ✅ Aplicar Parametrización (P1–P12) y Continuar al Sistema
-        </button>
+        <div class="modal-footer-right">
+          <span class="modal-status-feedback" id="modalLiveFeedbackText">✓ Todos los cambios se aplican en tiempo real</span>
+          <button type="button" id="btnConfirmParamsModal" class="btn-action-primary" style="width: auto; padding: 12px 28px;">
+            ✅ Confirmar Parametrización e Ir al Sistema
+          </button>
+        </div>
       </div>
 
     </div>
   </div>
 
   <!-- =====================================================================
-       FIRMA FIJA OBLIGATORIA DEL AUTOR (ESQUINA INFERIOR DERECHA)
+       PIE DE PÁGINA ACADÉMICO E INSTITUCIONAL (ESTÁTICO, NO FLOTANTE)
        ===================================================================== -->
-  <div class="author-floating-signature" aria-label="Firma del Autor">
-    <span class="sig-dot"></span>
-    <span class="sig-text">Marvin Luis Jiménez Narváez, Docente Ocasional, Facultad de Ciencias Exactas y Aplicadas</span>
-  </div>
+  <footer class="itm-footer">
+    <div class="footer-container">
+      <div class="footer-left">
+        <strong>SIMER-ITM</strong> · Sistema Interactivo de Muestreo Estadístico para la Reacreditación Institucional · Instituto Tecnológico Metropolitano (ITM), Medellín, Colombia.
+      </div>
+      <div class="footer-right">
+        Desarrollado por <strong>Marvin Luis Jiménez Narváez</strong> · Docente Ocasional, Departamento de Educación y Ciencias Básicas — Facultad de Ciencias Exactas y Aplicadas.
+      </div>
+    </div>
+  </footer>
 
   <!-- Datos Embebidos (Fallback instantáneo para ejecución local file:// y GitHub Pages) -->
   <script src="data/embedded_data.js"></script>
