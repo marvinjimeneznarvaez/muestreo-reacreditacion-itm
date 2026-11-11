@@ -329,22 +329,20 @@
     let docList = STATE.rawDatasets.docentes.slice();
 
     // P1: Docentes duplicados con dos tipos distintos de contrato (78 docentes / 156 registros)
-    if (P.P1 === 'CATEDRA') {
-      // Eliminar el registro de CÁTEDRA en los duplicados con distinto contrato
-      docList = docList.filter((r) => !(r.dup_distinto_contrato && r.tipo_contrato_raw === 'CÁTEDRA'));
-    } else if (P.P1 === 'OTRO') {
+    if (P.P1 === 'OTRO') {
       // Eliminar el registro de CARRERA / OCASIONAL y dejar CÁTEDRA
       docList = docList.filter((r) => !(r.dup_distinto_contrato && r.tipo_contrato_raw !== 'CÁTEDRA'));
+    } else {
+      // Por defecto ('CATEDRA'): Eliminar el registro de CÁTEDRA en los duplicados con distinto contrato
+      docList = docList.filter((r) => !(r.dup_distinto_contrato && r.tipo_contrato_raw === 'CÁTEDRA'));
     }
-    // Si P1 === 'AMBOS', se conservan los 156 registros
 
     // P2: Docentes duplicados con la misma categoría en tipo de contrato
-    if (P.P2 === 'CORREO_ITM') {
-      docList = docList.filter((r) => !(r.dup_mismo_contrato && r.dominio_correo === '@correo.itm.edu.co'));
-    } else if (P.P2 === 'ITM') {
+    if (P.P2 === 'ITM') {
       docList = docList.filter((r) => !(r.dup_mismo_contrato && r.dominio_correo === '@itm.edu.co'));
-    } else if (P.P2 === 'AMBOS') {
-      docList = docList.filter((r) => !r.dup_mismo_contrato);
+    } else {
+      // Por defecto ('CORREO_ITM'): Eliminar @correo.itm y conservar @itm.edu.co
+      docList = docList.filter((r) => !(r.dup_mismo_contrato && r.dominio_correo === '@correo.itm.edu.co'));
     }
 
     // P4: Docentes sin correo electrónico (239 registros en Cátedra)
@@ -1001,8 +999,11 @@
       STATE.selectedVarsByEstamento[estKey] = [meta.variables[0].id];
       if (subtitleEl) subtitleEl.textContent = 'Variable única oficial de estratificación para este estamento';
     } else if (estKey === 'estudiantes' && STATE.params.P12 === 'FORMA_1') {
-      STATE.selectedVarsByEstamento.estudiantes = ESTAMENTO_META.estudiantes.defaultVarsForma1.slice();
-      if (subtitleEl) subtitleEl.textContent = 'Forma 1 (Fija): Facultad × Nivel Agrupado × Modalidad';
+      const forma1Ids = ESTAMENTO_META.estudiantes.defaultVarsForma1;
+      STATE.selectedVarsByEstamento.estudiantes = (STATE.selectedVarsByEstamento.estudiantes || []).filter((id) =>
+        forma1Ids.includes(id)
+      );
+      if (subtitleEl) subtitleEl.textContent = 'Forma 1: Selecciona 1, 2 o las 3 variables (Facultad, Nivel Agrupado, Modalidad)';
     } else {
       if (subtitleEl) subtitleEl.textContent = 'Selecciona las variables para construir los estratos';
     }
@@ -1019,7 +1020,7 @@
     container.innerHTML = varsToShow
       .map((v) => {
         const isChecked = selected.includes(v.id);
-        const lockAttr = isSingleLockedVar || (estKey === 'estudiantes' && STATE.params.P12 === 'FORMA_1') ? 'disabled' : '';
+        const lockAttr = isSingleLockedVar ? 'disabled' : '';
         return `
         <label class="var-check-item ${isChecked ? 'checked' : ''}">
           <div class="var-check-left">
@@ -1785,6 +1786,21 @@
   // --------------------------------------------------------------------------
   // 17. INICIALIZACIÓN DE EVENTOS E INTERACCIÓN DEL DOM
   // --------------------------------------------------------------------------
+  function renderAllStaticMath() {
+    if (!window.renderMathInElement) return;
+    const opts = {
+      delimiters: [
+        { left: '$$', right: '$$', display: true },
+        { left: '$', right: '$', display: false }
+      ],
+      throwOnError: false
+    };
+    const headerEl = document.querySelector('.itm-header');
+    const mainEl = document.querySelector('.main-workspace');
+    if (headerEl) window.renderMathInElement(headerEl, opts);
+    if (mainEl) window.renderMathInElement(mainEl, opts);
+  }
+
   function switchMainTab(tabId) {
     STATE.activeTab = tabId;
     document.querySelectorAll('.nav-tab').forEach((btn) => {
@@ -1793,6 +1809,7 @@
     document.querySelectorAll('.tab-panel').forEach((panel) => {
       panel.classList.toggle('active', panel.id === tabId);
     });
+    renderAllStaticMath();
     // Redimensionar gráficos Plotly al cambiar de pestaña
     setTimeout(() => {
       if (window.Plotly) {
@@ -2191,18 +2208,7 @@
     applyParameterizationRules();
     renderVariablesChecklist();
     runMainCalculationAndRender();
-
-    // Renderizar fórmulas KaTeX estáticas únicamente en el contenedor principal (excluyendo el modal)
-    setTimeout(() => {
-      const mainEl = document.querySelector('.main-workspace');
-      if (window.renderMathInElement && mainEl) {
-        window.renderMathInElement(mainEl, {
-          delimiters: [
-            { left: '$$', right: '$$', display: true },
-            { left: '$', right: '$', display: false }
-          ]
-        });
-      }
-    }, 250);
+    renderAllStaticMath();
+    setTimeout(renderAllStaticMath, 200);
   });
 })();

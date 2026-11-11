@@ -13,8 +13,8 @@
 
   <!-- KaTeX para Notación Matemática Científica -->
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css" crossorigin="anonymous" />
-  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js" crossorigin="anonymous"></script>
-  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js" crossorigin="anonymous"></script>
 
   <!-- Plotly.js para Visualizaciones Estadísticas Interactivas -->
   <script src="https://cdn.plot.ly/plotly-2.32.0.min.js" charset="utf-8"></script>
@@ -84,7 +84,7 @@
         </button>
         <button class="nav-tab" data-tab="tab-matematica">
           <span class="tab-icon">📐</span>
-          <span>4. Marco Matemático y Estadístico ($\KaTeX$)</span>
+          <span>4. Marco Matemático y Estadístico ($\LaTeX$)</span>
         </button>
         <button class="nav-tab" data-tab="tab-custom">
           <span class="tab-icon">📂</span>
@@ -1207,18 +1207,10 @@
                   </div>
                   <span class="choice-desc">Elimina el registro de Carrera/Ocasional y deja al docente clasificado en CÁTEDRA</span>
                 </button>
-                <button type="button" class="param-choice-btn" data-param="P1" data-val="AMBOS">
-                  <div class="choice-top">
-                    <span class="choice-radio">○</span>
-                    <strong class="choice-title">Conservar ambos registros</strong>
-                  </div>
-                  <span class="choice-desc">Trata el contrato como unidad muestral (mantiene las 156 filas)</span>
-                </button>
               </div>
               <select id="param_P1" class="form-select param-input hidden-select">
                 <option value="CATEDRA" selected>CATEDRA</option>
                 <option value="OTRO">OTRO</option>
-                <option value="AMBOS">AMBOS</option>
               </select>
             </div>
 
@@ -1275,17 +1267,10 @@
                     <strong class="choice-title">Eliminar @itm (Conservar @correo.itm.edu.co)</strong>
                   </div>
                 </button>
-                <button type="button" class="param-choice-btn" data-param="P2" data-val="AMBOS">
-                  <div class="choice-top">
-                    <span class="choice-radio">○</span>
-                    <strong class="choice-title">Eliminar ambos registros</strong>
-                  </div>
-                </button>
               </div>
               <select id="param_P2" class="form-select param-input hidden-select">
                 <option value="CORREO_ITM" selected>CORREO_ITM</option>
                 <option value="ITM">ITM</option>
-                <option value="AMBOS">AMBOS</option>
               </select>
             </div>
 
