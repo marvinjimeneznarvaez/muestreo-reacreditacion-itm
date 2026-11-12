@@ -1252,6 +1252,28 @@ code {
   font-size: 14.5px;
 }
 
+.formula-equivalence-note {
+  margin-top: 14px;
+  padding: 12px 16px;
+  background: #f0fdfa;
+  border-left: 4px solid var(--sci-teal);
+  border-radius: 6px;
+  font-size: 12.5px;
+  line-height: 1.6;
+  color: #1e293b;
+  text-align: left;
+}
+
+.formula-equivalence-note strong {
+  color: var(--itm-navy);
+}
+
+.formula-equivalence-note em {
+  color: #047857;
+  font-style: normal;
+  font-weight: 600;
+}
+
 /* Grilla de Gráficos Interactivos */
 .charts-two-grid {
   display: grid;

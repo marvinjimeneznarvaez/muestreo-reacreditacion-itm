@@ -685,10 +685,11 @@
           ? (st.Nh * st.Sh) / sumNhSh
           : st.Wh;
 
-      const baseH = Math.min(st.Nh, Math.max(1, Math.round(nNetGlobal * weightAlloc)));
-      let finalH = Math.min(st.Nh, Math.max(1, Math.ceil(nAdjustedTarget * weightAlloc)));
+      let baseH = Math.min(st.Nh, Math.max(1, Math.ceil(nNetGlobal * weightAlloc)));
+      let finalH = Math.min(st.Nh, Math.max(baseH, Math.ceil(nAdjustedTarget * weightAlloc)));
 
       if (cfg.microStrataCensus && st.Nh <= 5) {
+        baseH = st.Nh;
         finalH = st.Nh;
       }
 
@@ -1300,35 +1301,61 @@
   function renderLiveMathFormula(res) {
     const container = document.getElementById('liveFormulaMathContainer');
     const titleEl = document.getElementById('liveFormulaTitle');
+    const badgeEl = document.getElementById('liveDesignBadge');
     if (!container || !res) return;
 
     const Zstr = res.Z.toFixed(4);
     const estr = res.e.toFixed(4);
+    const tnrPct = (res.tnr * 100).toFixed(0);
+    const ShVal = Math.sqrt(res.p * (1 - res.p)).toFixed(4);
     let latex = '';
+    let noteHtml = '';
 
     if (res.design === 'CENSO') {
       titleEl.textContent = 'Censo Institucional Exhaustivo (N = n)';
-      latex = `$$n = N = ${res.N}, \\qquad f = \\frac{n}{N} = 100.0\\%, \\qquad \\text{Error Muestral } e = 0.0\\%$$`;
+      if (badgeEl) badgeEl.textContent = 'Censo Institucional Exhaustivo · n = N (Error e = 0%)';
+      latex = `$$n = N = ${fmtMath(res.N)}, \\qquad f = \\frac{n}{N} = 100.0\\%, \\qquad \\text{Error Muestral } e = 0.0\\%, \\qquad \\text{TNR Aplicada } = 0\\%$$`;
+      noteHtml = `
+        <div class="formula-equivalence-note">
+          <strong>Censo Institucional Exhaustivo:</strong> Al convocarse al $100\\%$ de los integrantes del estamento ($n = N$), la varianza del estimador es idénticamente nula ($\\mathbb{V}(\\hat{P}) = 0$) y no existe error de muestreo ($e = 0.0\\%$).
+        </div>`;
     } else if (res.design === 'MAS') {
       titleEl.textContent = 'Muestreo Aleatorio Simple Sin Reemplazo (MAS con FPC)';
-      latex = `$$n_0 = \\frac{(${Zstr})^2 \\cdot (${res.p.toFixed(2)})(${(1 - res.p).toFixed(2)})}{(${estr})^2}, \\qquad n_{\\text{MAS}} = \\left\\lceil \\frac{n_0}{1 + \\dfrac{n_0 - 1}{${res.N}}} \\right\\rceil = \\mathbf{${res.nFinal}}$$`;
+      if (badgeEl) badgeEl.textContent = 'MAS Sin Reemplazo · πᵢ = n / N (Sin Estratificar)';
+      latex = `$$\\begin{aligned}
+        n_{\\infty} &= \\frac{(${Zstr})^2 \\cdot (${res.p.toFixed(2)})(${(1 - res.p).toFixed(2)})}{(${estr})^2}, \\qquad n_0 = \\left\\lceil \\frac{n_{\\infty}}{1 + \\dfrac{n_{\\infty} - 1}{${fmtMath(res.N)}}} \\right\\rceil = \\mathbf{${fmtMath(res.nNet)}} \\\\[6pt]
+        n &= \\left\\lceil \\frac{n_0}{1 - \\text{TNR}} \\right\\rceil = \\left\\lceil \\frac{${fmtMath(res.nNet)}}{1 - ${res.tnr.toFixed(2)}} \\right\\rceil = \\mathbf{${fmtMath(res.nFinal)}} \\quad (\\text{TNR} = ${tnrPct}\\%), \\qquad \\pi_i = \\frac{n}{N} \\approx ${(res.nFinal / res.N).toFixed(4)}
+      \\end{aligned}$$`;
+      noteHtml = `
+        <div class="formula-equivalence-note">
+          <strong>Muestreo Aleatorio Simple:</strong> Todas las unidades tienen idéntica probabilidad de inclusión ($\\pi_i = n / N$). Este diseño es adecuado cuando el universo es relativamente homogéneo o no se cuenta con variables auxiliares de estratificación.
+        </div>`;
     } else if (res.design === 'NEYMAN') {
       titleEl.textContent = `Muestreo Aleatorio Estratificado — Afijación Óptima de Neyman (H = ${res.H} estratos)`;
-      latex = `$$n_{\\text{Neyman}} = \\frac{\\left(\\sum_{h=1}^{${res.H}} W_h S_h\\right)^2}{\\dfrac{(${estr})^2}{(${Zstr})^2} + \\dfrac{1}{${res.N}}\\sum_{h=1}^{${res.H}} W_h S_h^2} = \\mathbf{${res.nNet}} \\xrightarrow{\\text{Ajuste TNR / Micro-estratos}} \\mathbf{n = ${res.nFinal}}, \\qquad n_h = n \\cdot \\frac{N_h S_h}{\\sum_{k=1}^{${res.H}} N_k S_k}$$`;
+      if (badgeEl) badgeEl.textContent = 'MAE Óptimo de Neyman · wₕ ∝ Nₕ · Sₕ (Mínima Varianza)';
+      latex = `$$\\begin{aligned}
+        n_0 &= \\frac{\\left(\\sum_{h=1}^{${res.H}} W_h S_h\\right)^2}{\\dfrac{(${estr})^2}{(${Zstr})^2} + \\dfrac{1}{${fmtMath(res.N)}}\\sum_{h=1}^{${res.H}} W_h S_h^2} = \\mathbf{${fmtMath(res.nNet)}}, \\qquad n = \\left\\lceil \\frac{n_0}{1 - \\text{TNR}} \\right\\rceil = \\left\\lceil \\frac{${fmtMath(res.nNet)}}{1 - ${res.tnr.toFixed(2)}} \\right\\rceil = \\mathbf{${fmtMath(res.nFinal)}} \\quad (\\text{TNR} = ${tnrPct}\\%) \\\\[6pt]
+        w_h &= \\frac{N_h S_h}{\\sum_{k=1}^{${res.H}} N_k S_k} \\implies n_h = \\max\\left(1, \\left\\lceil n \\cdot w_h \\right\\rceil\\right) \\quad \\left(\\text{con } n_h = N_h \\text{ en micro-estratos } N_h \\le 5\\right)
+      \\end{aligned}$$`;
+      noteHtml = `
+        <div class="formula-equivalence-note">
+          <strong>¿Por qué coinciden los valores numéricos con la Afijación Proporcional en esta pestaña?</strong> Bajo el supuesto conservador <em>a priori</em> de varianza máxima homogénea ($p_h = p = ${res.p.toFixed(2)}$ en todos los estratos), la desviación estándar intra-estrato es constante ($S_h = \\sqrt{p(1-p)} \\approx ${ShVal} \\; \\forall h$). Por el <strong>Teorema de Cochran (1977)</strong>, cuando $S_h$ es constante entre estratos, el factor $S_h$ se cancela en $w_h^{\\text{Neyman}} = \\frac{N_h S_h}{\\sum N_k S_k} = \\frac{N_h}{N} = W_h$, produciendo exactamente el mismo tamaño muestral y la misma asignación por estrato que la Afijación Proporcional. La Afijación de Neyman asigna cuotas distintas cuando los estratos presentan desviaciones $S_h$ heterogéneas (explorable en la <strong>Pestaña 2: Muestra Preliminar vs. Definitiva</strong> con $\\hat{p}_{0h}$ diferenciados por estrato).
+        </div>`;
     } else {
       titleEl.textContent = `Muestreo Aleatorio Estratificado — Afijación Proporcional (H = ${res.H} estratos)`;
-      latex = `$$n_{\\text{Prop}} = \\frac{\\sum_{h=1}^{${res.H}} W_h S_h^2}{\\dfrac{(${estr})^2}{(${Zstr})^2} + \\dfrac{1}{${res.N}}\\sum_{h=1}^{${res.H}} W_h S_h^2} = \\mathbf{${res.nNet}} \\xrightarrow{\\text{Ajuste TNR / Micro-estratos}} \\mathbf{n = ${res.nFinal}}, \\qquad n_h = \\left\\lceil n \\cdot \\frac{N_h}{${res.N}} \\right\\rceil$$`;
+      if (badgeEl) badgeEl.textContent = 'MAE Proporcional · wₕ = Nₕ / N (Autoponderado)';
+      latex = `$$\\begin{aligned}
+        n_0 &= \\frac{\\sum_{h=1}^{${res.H}} W_h S_h^2}{\\dfrac{(${estr})^2}{(${Zstr})^2} + \\dfrac{1}{${fmtMath(res.N)}}\\sum_{h=1}^{${res.H}} W_h S_h^2} = \\mathbf{${fmtMath(res.nNet)}}, \\qquad n = \\left\\lceil \\frac{n_0}{1 - \\text{TNR}} \\right\\rceil = \\left\\lceil \\frac{${fmtMath(res.nNet)}}{1 - ${res.tnr.toFixed(2)}} \\right\\rceil = \\mathbf{${fmtMath(res.nFinal)}} \\quad (\\text{TNR} = ${tnrPct}\\%) \\\\[6pt]
+        w_h &= \\frac{N_h}{N} = W_h \\implies n_h = \\max\\left(1, \\left\\lceil n \\cdot W_h \\right\\rceil\\right) \\quad \\left(\\text{con } n_h = N_h \\text{ en micro-estratos } N_h \\le 5\\right)
+      \\end{aligned}$$`;
+      noteHtml = `
+        <div class="formula-equivalence-note">
+          <strong>Propiedad de Autoponderación (<em>Self-weighting</em>):</strong> Cada estrato recibe una cuota exactamente proporcional a su peso poblacional ($w_h = W_h = N_h / N$), garantizando igual fracción de muestreo base ($f_{0h} \\approx n_0 / N$) y optimalidad simultánea para múltiples ítems en escala Likert.
+        </div>`;
     }
 
-    container.innerHTML = latex;
-    if (window.renderMathInElement) {
-      window.renderMathInElement(container, {
-        delimiters: [
-          { left: '$$', right: '$$', display: true },
-          { left: '$', right: '$', display: false }
-        ]
-      });
-    }
+    container.innerHTML = `<div class="formula-math-display">${latex}</div>${noteHtml}`;
+    renderMathIn(container);
   }
 
   // Número formateado para usarse DENTRO de KaTeX ($...$): la coma va entre llaves para que no agregue espacio
@@ -1406,7 +1433,7 @@
       headline = `<strong>Viabilidad completa (${res.H} de ${res.H} estratos):</strong> Todos los estratos cuentan con suficientes estudiantes con $\\text{Promedio} \\ge ${cTxt}$ para extraer la muestra de <strong>${formatNumber(res.nFinal)}</strong> estudiantes.`;
     } else {
       strip.className = 'gpa-viability-strip viable-warn';
-      headline = `<strong>Diagnóstico de viabilidad por estrato ($\\text{Promedio} \\ge ${cTxt}$):</strong> <strong>${viableCount} de ${res.H} estratos</strong> cubren la cuota con $\\text{Promedio} \\ge ${cTxt}$. En <strong>${deficitCount} estratos</strong> se toman los elegibles con $\\text{Promedio} \\ge ${cTxt}$ y se completa la cuota (en total <strong>${formatNumber(totalDeficitUnits)}</strong> estudiantes) descendiendo en cascada por debajo de ${cTxt}.`;
+      headline = `<strong>Diagnóstico de viabilidad por estrato ($\\text{Promedio} \\ge ${cTxt}$):</strong> <strong>${viableCount} de ${res.H} estratos</strong> cubren su muestra directamente con estudiantes de $\\text{Promedio} \\ge ${cTxt}$. En los <strong>${deficitCount} estratos</strong> donde la tabla indica individuos faltantes (<strong>${formatNumber(totalDeficitUnits)}</strong> unidades en total), <strong>se aplica automáticamente la estrategia de descenso gradual</strong> (completando las muestras con estudiantes de promedio inferior a ${cTxt}$ en escalones descendentes de $0.5$ puntos) para cubrir el $100\\%$ de cada estrato.`;
     }
 
     strip.innerHTML = `
@@ -2805,24 +2832,35 @@
     };
 
     document.getElementById('rangeMarginError').addEventListener('input', (e) => syncMarginError(e.target.value));
+    document.getElementById('inputMarginError').addEventListener('input', (e) => syncMarginError(e.target.value));
     document.getElementById('inputMarginError').addEventListener('change', (e) => syncMarginError(e.target.value));
     document.querySelectorAll('.btn-preset').forEach((btn) => {
       btn.addEventListener('click', () => syncMarginError(btn.getAttribute('data-error')));
     });
 
-    document.getElementById('inputPropP').addEventListener('change', (e) => {
-      const p = Math.min(0.95, Math.max(0.05, Number(e.target.value) || 0.50));
+    const syncPropP = (val) => {
+      const p = Math.min(0.95, Math.max(0.05, Number(val) || 0.50));
       STATE.samplingConfig.propP = p;
       document.getElementById('valPropPDisplay').textContent = p.toFixed(2);
       runMainCalculationAndRender();
-    });
+    };
+    const inpProp = document.getElementById('inputPropP');
+    if (inpProp) {
+      inpProp.addEventListener('input', (e) => syncPropP(e.target.value));
+      inpProp.addEventListener('change', (e) => syncPropP(e.target.value));
+    }
 
-    document.getElementById('inputTNR').addEventListener('change', (e) => {
-      const tnr = Math.min(50, Math.max(0, Number(e.target.value) || 0));
+    const syncTnr = (val) => {
+      const tnr = Math.min(50, Math.max(0, Number(val) || 0));
       STATE.samplingConfig.tnr = tnr;
       document.getElementById('valTNRDisplay').textContent = `${tnr}%`;
       runMainCalculationAndRender();
-    });
+    };
+    const inpTnr = document.getElementById('inputTNR');
+    if (inpTnr) {
+      inpTnr.addEventListener('input', (e) => syncTnr(e.target.value));
+      inpTnr.addEventListener('change', (e) => syncTnr(e.target.value));
+    }
 
     document.getElementById('checkMicroStrataCensus').addEventListener('change', (e) => {
       STATE.samplingConfig.microStrataCensus = e.target.checked;
@@ -3043,6 +3081,12 @@
   document.addEventListener('DOMContentLoaded', async () => {
     await loadAllDatasets();
     bindEventListeners();
+    const initTnr = DEFAULT_TNR_BY_ESTAMENTO[STATE.activeEstamento] ?? 20;
+    STATE.samplingConfig.tnr = initTnr;
+    const inpTnrInit = document.getElementById('inputTNR');
+    const dispTnrInit = document.getElementById('valTNRDisplay');
+    if (inpTnrInit) inpTnrInit.value = String(initTnr);
+    if (dispTnrInit) dispTnrInit.textContent = `${initTnr}%`;
     syncModalInputsFromState();
     applyParameterizationRules();
     renderVariablesChecklist();

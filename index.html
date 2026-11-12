@@ -28,7 +28,7 @@
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 
   <!-- Hoja de Estilos Institucional Luminosa -->
-  <link rel="stylesheet" href="styles.css" />
+  <link rel="stylesheet" href="styles.css?v=20261112v6" />
 </head>
 
 <body>
@@ -140,7 +140,7 @@
               </div>
               <div class="est-metric-sample">
                 <span class="metric-label">Muestra $n$</span>
-                <span class="metric-value highlight-teal" id="ribbonSample_estudiantes">--</span>
+                <span class="metric-value highlight-teal" id="ribbonSample_estudiantes">489</span>
               </div>
             </div>
             <p class="est-card-foot" id="footEstudiantes">Pregrado y Posgrado · 20 estratos (Forma 1)</p>
@@ -151,21 +151,21 @@
         <div class="estamento-card" data-estamento="docentes">
           <div class="est-card-top">
             <span class="est-badge est-badge-teal">ESTAMENTO 2</span>
-            <span class="est-param-tag" id="tagParamDocentes">Sin Comisión Admin.</span>
+            <span class="est-param-tag" id="tagParamDocentes">Sin Comisión Admin. · Calc. Todos (1,689) / Sorteo c/Correo</span>
           </div>
           <div class="est-card-body">
             <h3 class="est-name">👨‍🏫 Docentes / Profesores</h3>
             <div class="est-metrics">
               <div class="est-metric-main">
                 <span class="metric-label">Marco Efectivo $N$</span>
-                <span class="metric-value" id="ribbonN_docentes">1,451</span>
+                <span class="metric-value" id="ribbonN_docentes">1,689</span>
               </div>
               <div class="est-metric-sample">
                 <span class="metric-label">Muestra $n$</span>
-                <span class="metric-value highlight-teal" id="ribbonSample_docentes">--</span>
+                <span class="metric-value highlight-teal" id="ribbonSample_docentes">394</span>
               </div>
             </div>
-            <p class="est-card-foot" id="footDocentes">Carrera (111), Ocasionales (299) y Cátedra (1,041)</p>
+            <p class="est-card-foot" id="footDocentes">Carrera (111), Ocasionales (299) y Cátedra (1,279) · 1,451 con correo</p>
           </div>
         </div>
 
@@ -184,7 +184,7 @@
               </div>
               <div class="est-metric-sample">
                 <span class="metric-label">Muestra $n$</span>
-                <span class="metric-value highlight-emerald" id="ribbonSample_administrativos">--</span>
+                <span class="metric-value highlight-emerald" id="ribbonSample_administrativos">165</span>
               </div>
             </div>
             <p class="est-card-foot" id="footAdministrativos">Rectoría (9) + Administrativos (203) · 4 niveles</p>
@@ -195,7 +195,7 @@
         <div class="estamento-card" data-estamento="empleadores">
           <div class="est-card-top">
             <span class="est-badge est-badge-amber">ESTAMENTO 4</span>
-            <span class="est-param-tag" id="tagParamEmpleadores">P10: Empresa</span>
+            <span class="est-param-tag" id="tagParamEmpleadores">P10: Empresa (302)</span>
           </div>
           <div class="est-card-body">
             <h3 class="est-name">🏢 Empleadores</h3>
@@ -206,10 +206,10 @@
               </div>
               <div class="est-metric-sample">
                 <span class="metric-label">Muestra $n$</span>
-                <span class="metric-value highlight-amber" id="ribbonSample_empleadores">--</span>
+                <span class="metric-value highlight-amber" id="ribbonSample_empleadores">227</span>
               </div>
             </div>
-            <p class="est-card-foot" id="footEmpleadores">302 Empresas (NIT) · 525 Jefes (sin ITM)</p>
+            <p class="est-card-foot" id="footEmpleadores">302 Empresas únicas NIT (sin ITM) · 525 Jefes</p>
           </div>
         </div>
 
@@ -217,21 +217,21 @@
         <div class="estamento-card" data-estamento="graduados">
           <div class="est-card-top">
             <span class="est-badge est-badge-indigo">ESTAMENTO 5</span>
-            <span class="est-param-tag" id="tagParamGraduados">P11: Con Correo</span>
+            <span class="est-param-tag" id="tagParamGraduados">P11: Calc. Todos (45,154) / Sorteo c/Correo</span>
           </div>
           <div class="est-card-body">
             <h3 class="est-name">🎖️ Graduados / Egresados</h3>
             <div class="est-metrics">
               <div class="est-metric-main">
                 <span class="metric-label">Marco Efectivo $N$</span>
-                <span class="metric-value" id="ribbonN_graduados">3,276</span>
+                <span class="metric-value" id="ribbonN_graduados">45,154</span>
               </div>
               <div class="est-metric-sample">
                 <span class="metric-label">Muestra $n$</span>
-                <span class="metric-value highlight-indigo" id="ribbonSample_graduados">--</span>
+                <span class="metric-value highlight-indigo" id="ribbonSample_graduados">552</span>
               </div>
             </div>
-            <p class="est-card-foot" id="footGraduados">3,276 con correo (de 45,154 únicos)</p>
+            <p class="est-card-foot" id="footGraduados">45,154 graduados únicos · 3,276 con correo</p>
           </div>
         </div>
       </div>
@@ -332,10 +332,7 @@
                 MÍNIMO</span>
               <h4>Filtro de Elegibilidad por Promedio Mínimo ($\text{Promedio} \ge c$) para Selección de la Muestra</h4>
               <p>
-                Los tamaños muestrales $n_h$ de cada estrato se calculan sobre la <strong>población original ($N =
-                  29{,}904$)</strong>, pero el sorteo aleatorio dentro de cada estrato $h$ selecciona individuos del
-                subconjunto con <strong>$\text{Promedio} \ge c$</strong>. Cambia el umbral $c$ en cualquier momento para
-                verificar la suficiencia de estudiantes por estrato ($N_h(\ge c) \ge n_h$).
+                Los tamaños muestrales $n_h$ de cada estrato se calculan sobre la <strong>población original ($N = 29{,}904$)</strong>, pero el sorteo aleatorio dentro de cada estrato $h$ selecciona individuos del subconjunto con <strong>$\text{Promedio} \ge c$</strong>. <strong>Estrategia de descenso gradual:</strong> a pesar de que para ciertos valores de $c$ la tabla de viabilidad muestre individuos faltantes en algunos estratos ($N_h(\text{Prom.} \ge c) < n_h$), el sistema completa automáticamente las muestras de esos estratos descendiendo gradualmente hacia promedios inferiores a $c$ (en intervalos de $0.5$ puntos), garantizando el cumplimiento del $100\%$ de la cuota $n_h$.
               </p>
             </div>
             <div class="gpa-header-controls">
@@ -615,8 +612,8 @@
                 <span class="kpi-title">MUESTRA NETA ($n_0$)</span>
                 <span class="kpi-icon">🎯</span>
               </div>
-              <div class="kpi-value" id="kpiSampleNet">380</div>
-              <div class="kpi-sub" id="kpiSampleNetSub">Fracción muestral $f = 1.27\%$</div>
+              <div class="kpi-value" id="kpiSampleNet">389</div>
+              <div class="kpi-sub" id="kpiSampleNetSub">Fracción muestral $f = 1.30\%$</div>
             </div>
 
             <div class="kpi-card kpi-emerald">
@@ -624,8 +621,8 @@
                 <span class="kpi-title">MUESTRA FINAL OPERATIVA ($n$)</span>
                 <span class="kpi-icon">✅</span>
               </div>
-              <div class="kpi-value" id="kpiSampleFinal">380</div>
-              <div class="kpi-sub" id="kpiSampleFinalSub">Ajustada por TNR y micro-estratos</div>
+              <div class="kpi-value" id="kpiSampleFinal">489</div>
+              <div class="kpi-sub" id="kpiSampleFinalSub">Ajustada por TNR ($20\%$) y micro-estratos</div>
             </div>
 
             <div class="kpi-card kpi-indigo">
@@ -1862,11 +1859,11 @@
   </footer>
 
   <!-- Datos Embebidos (Fallback instantáneo para ejecución local file:// y GitHub Pages) -->
-  <script src="data/embedded_data.js"></script>
+  <script src="data/embedded_data.js?v=20261112v6"></script>
   <!-- Datos Encriptados PII (Desencriptación autorizada bajo demanda) -->
-  <script src="data/encrypted_pii_data.js"></script>
+  <script src="data/encrypted_pii_data.js?v=20261112v6"></script>
   <!-- Motor Estadístico e Interactivo Principal -->
-  <script src="app.js"></script>
+  <script src="app.js?v=20261112v6"></script>
 </body>
 
 </html>
