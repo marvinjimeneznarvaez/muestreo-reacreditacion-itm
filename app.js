@@ -134,21 +134,22 @@
       graduados: [],
       custom: []
     },
-    // Los Parámetros Institucionales (P1 a P12 + P_COMISION) con sus valores por defecto exactos
+    // Los Parámetros Institucionales (P1 a P12 + P_COMISION + P_EMP_ITM) con sus valores por defecto exactos
     params: {
-      P_COMISION: 'EXCLUIR', // Excluir de Docentes a los 11 administrativos "En comisión" (16 filas)
-      P1: 'CATEDRA',         // Eliminar CÁTEDRA en duplicados por cátedra extra
-      P2: 'CORREO_ITM',      // Eliminar @correo.itm en duplicados de mismo contrato
-      P3: 'DEJAR_UNO',       // Deduplicación exacta
-      P4: 'EXCLUIR',         // Excluir docentes sin correo (239 en Cátedra)
-      P5: 'EXCLUIR',         // Excluir 19 vacantes sin cédula en Administrativos
-      P6: 'EXCLUIR',         // Excluir vacante temporal s/correo de 71720089
-      P7: 'NO_EXCLUIR',      // No excluir 70382234 ("claudia patricia")
-      P8: 'NO_EXCLUIR',      // No excluir conductor 71611587 sin correo en Rectoría (acuerdo reunión)
-      P9: 'MUESTREO',        // Administrativos: MAE por Nivel Jerárquico por defecto (acuerdo reunión)
-      P10: 'EMPRESA',        // Empleadores: Empresa única por NIT (303) por defecto
-      P11: 'EXCLUIR',        // Graduados: Excluir sin correo (3,276) por defecto
-      P12: 'FORMA_1'         // Estudiantes: Forma 1 por defecto
+      P_COMISION: 'EXCLUIR',          // Excluir de Docentes a los 11 administrativos "En comisión" (16 filas)
+      P1: 'CATEDRA',                  // Eliminar CÁTEDRA en duplicados por cátedra extra
+      P2: 'CORREO_ITM',               // Eliminar @correo.itm en duplicados de mismo contrato
+      P3: 'DEJAR_UNO',                // Deduplicación exacta
+      P4: 'SORTEAR_CON_CORREO',       // Docentes: Calcular n_h con todos (1,689) y sortear en los que tienen correo (1,451)
+      P5: 'EXCLUIR',                  // Excluir 19 vacantes sin cédula en Administrativos
+      P6: 'EXCLUIR',                  // Excluir vacante temporal s/correo de 71720089
+      P7: 'NO_EXCLUIR',               // No excluir 70382234 ("claudia patricia")
+      P8: 'NO_EXCLUIR',               // No excluir conductor 71611587 sin correo en Rectoría (acuerdo reunión)
+      P9: 'MUESTREO',                 // Administrativos: MAE por Nivel Jerárquico por defecto (acuerdo reunión)
+      P10: 'EMPRESA',                 // Empleadores: Empresa única por NIT por defecto
+      P_EMP_ITM: 'EXCLUIR',           // Empleadores: Excluir registros del propio ITM (NIT 800214750)
+      P11: 'SORTEAR_CON_CORREO',      // Graduados: Calcular n_h con todos (45,154) y sortear en los que tienen correo (3,276)
+      P12: 'FORMA_1'                  // Estudiantes: Forma 1 por defecto
     },
     activeEstamento: 'estudiantes',
     activeTab: 'tab-muestreo',
@@ -274,7 +275,7 @@
   }
 
   async function loadAllDatasets() {
-    let sourceData = window.SIMER_DATA || null;
+    let sourceData = window.SIMER_DATA || window.SIMER_EMBEDDED_DATA || null;
 
     if (!sourceData) {
       try {
@@ -361,6 +362,7 @@
     }
 
     // P4: Docentes sin correo electrónico (239 registros en Cátedra)
+    // Si P4 es 'SORTEAR_CON_CORREO' o 'NO_EXCLUIR', se calcula n_h con toda la población (N = 1,689)
     if (P.P4 === 'EXCLUIR') {
       docList = docList.filter((r) => r.tiene_correo);
     }
@@ -383,13 +385,18 @@
     }
     STATE.filteredDatasets.administrativos = admList;
 
-    // 4. EMPLEADORES (P10: Empresa = 303 vs Jefe = 531)
-    STATE.filteredDatasets.empleadores =
+    // 4. EMPLEADORES (P10: Empresa vs Jefe, P_EMP_ITM: Exclusión de registros propios del ITM)
+    let empList =
       P.P10 === 'EMPRESA'
         ? STATE.rawDatasets.empleadores.empresas
         : STATE.rawDatasets.empleadores.jefes;
+    if (P.P_EMP_ITM === 'EXCLUIR') {
+      empList = empList.filter((r) => !r.es_itm);
+    }
+    STATE.filteredDatasets.empleadores = empList;
 
-    // 5. GRADUADOS (P11: Excluir sin correo = 3,276 vs No excluir = 45,154)
+    // 5. GRADUADOS (P11: Excluir sin correo vs Sorteo en los que tienen correo vs No excluir)
+    // Si P11 es 'SORTEAR_CON_CORREO' o 'NO_EXCLUIR', se calcula n_h con toda la población (N = 45,154)
     STATE.filteredDatasets.graduados =
       P.P11 === 'EXCLUIR'
         ? STATE.rawDatasets.graduados.filter((r) => r.tiene_correo)
@@ -679,7 +686,9 @@
       st.n0h = baseH;
       st.nh = finalH;
 
-      // Evaluar subconjunto elegible por Promedio >= minGpa en Estudiantes
+      // Evaluar subconjunto elegible por Promedio >= minGpa en Estudiantes,
+      // o por tener correo verificado en Docentes (P4 === 'SORTEAR_CON_CORREO')
+      // y Graduados (P11 === 'SORTEAR_CON_CORREO')
       if (isEstudiantes && minGpa > 0) {
         const recsGeC = st.records.filter((r) => Number(r.promedio) >= minGpa);
         const recsZero = st.records.filter((r) => Number(r.promedio) === 0);
@@ -704,6 +713,18 @@
           st.eligibleRecords = recsGeC.length >= finalH ? recsGeC : [...recsGeC, ...recsZero];
           st.NhEligible = recsGeC.length;
         }
+      } else if (
+        (estamentoKey === 'docentes' && STATE.params.P4 === 'SORTEAR_CON_CORREO') ||
+        (estamentoKey === 'graduados' && STATE.params.P11 === 'SORTEAR_CON_CORREO')
+      ) {
+        const recsEmail = st.records.filter((r) => r.tiene_correo === true || r.tiene_correo === 1);
+        st.eligibleRecords = recsEmail;
+        st.NhEligible = recsEmail.length;
+        st.strictViable = recsEmail.length >= finalH;
+        st.strictDeficit = Math.max(0, finalH - recsEmail.length);
+        st.NhGpaGeC = recsEmail.length;
+        st.NhGpaZero = 0;
+        st.NhGpaLowPos = 0;
       } else {
         st.NhGpaGeC = st.Nh;
         st.NhGpaZero = 0;
@@ -740,6 +761,11 @@
     };
   }
 
+  // Alias para compatibilidad metodológica
+  function calculateSampleSizes(estamentoKey) {
+    return computeSamplingForEstamento(estamentoKey);
+  }
+
   // --------------------------------------------------------------------------
   // 9. SORTEO ALEATORIO REPRODUCIBLE DE INDIVIDUOS POR ESTRATO
   // --------------------------------------------------------------------------
@@ -751,9 +777,12 @@
 
     const selectedAll = [];
     let globalOrder = 1;
-    const isEst = STATE.activeEstamento === 'estudiantes';
+    const estKey = STATE.activeEstamento;
+    const isEst = estKey === 'estudiantes';
     const minGpa = isEst ? Number(STATE.studentGpaFilter.minGpa) || 0 : 0;
     const zeroRule = isEst ? STATE.studentGpaFilter.zeroRule : 'STRICT_WITH_FALLBACK';
+    const isDocEmailSort = estKey === 'docentes' && STATE.params.P4 === 'SORTEAR_CON_CORREO';
+    const isGradEmailSort = estKey === 'graduados' && STATE.params.P11 === 'SORTEAR_CON_CORREO';
 
     STATE.currentResult.strata.forEach((st) => {
       let picked = [];
@@ -770,6 +799,9 @@
         } else {
           picked = sampleWithoutReplacement(st.eligibleRecords || st.records, st.nh, prng);
         }
+      } else if (isDocEmailSort || isGradEmailSort) {
+        const pool = (st.eligibleRecords && st.eligibleRecords.length > 0) ? st.eligibleRecords : st.records;
+        picked = sampleWithoutReplacement(pool, st.nh, prng);
       } else {
         picked = sampleWithoutReplacement(st.records, st.nh, prng);
       }
@@ -777,9 +809,13 @@
       const pi_h = st.Nh > 0 ? picked.length / st.Nh : 1;
       const weight_h = pi_h > 0 ? 1 / pi_h : 1;
 
-      picked.forEach((rec) => {
+      picked.forEach((rec, idx) => {
+        const stratumOrder = idx + 1;
+        const sampleGroup = idx < st.n0h ? 'Muestra_Neta' : 'Adicion_TNR';
         selectedAll.push({
           order: globalOrder++,
+          stratumOrder,
+          sampleGroup,
           id_registro: rec.id_registro || rec.id || `UNID-${globalOrder}`,
           hash_id: rec.hash_id || rec.hash || 'SHA256-ANON',
           stratumCode: st.code,
@@ -1006,14 +1042,39 @@
           : `Estudiantes_Enriquecido.xlsx (N = ${formatNumber(nEst)})`;
     }
 
+    const nDoc = (STATE.filteredDatasets.docentes || []).length;
+    const nEmp = (STATE.filteredDatasets.empleadores || []).length;
+    const nGrad = (STATE.filteredDatasets.graduados || []).length;
+
+    const docTagMail = STATE.params.P4 === 'EXCLUIR'
+      ? 'Con Correo (1,451)'
+      : STATE.params.P4 === 'SORTEAR_CON_CORREO'
+      ? 'Calc. Todos (1,689) / Sorteo c/Correo'
+      : 'Todos (1,689)';
     document.getElementById('tagParamDocentes').textContent =
-      `${STATE.params.P_COMISION === 'EXCLUIR' ? 'Sin Comisión' : 'Con Comisión'} · ${STATE.params.P4 === 'EXCLUIR' ? 'Con Correo' : 'Todos'}`;
+      `${STATE.params.P_COMISION === 'EXCLUIR' ? 'Sin Comisión' : 'Con Comisión'} · ${docTagMail}`;
+
     document.getElementById('tagParamAdministrativos').textContent =
       `P9: ${STATE.params.P9 === 'MUESTREO' ? 'MAE Jerárquico' : 'Censo'}`;
-    document.getElementById('tagParamEmpleadores').textContent =
-      `P10: ${STATE.params.P10 === 'EMPRESA' ? 'Empresa (303)' : 'Jefe (531)'}`;
-    document.getElementById('tagParamGraduados').textContent =
-      `P11: ${STATE.params.P11 === 'EXCLUIR' ? 'Con Correo' : 'Todos'}`;
+
+    const empTagUnit = STATE.params.P10 === 'EMPRESA'
+      ? (STATE.params.P_EMP_ITM === 'EXCLUIR' ? 'Empresa (302)' : 'Empresa (303)')
+      : (STATE.params.P_EMP_ITM === 'EXCLUIR' ? 'Jefe (525)' : 'Jefe (531)');
+    document.getElementById('tagParamEmpleadores').textContent = `P10: ${empTagUnit}`;
+
+    const gradTagMail = STATE.params.P11 === 'EXCLUIR'
+      ? 'Con Correo (3,276)'
+      : STATE.params.P11 === 'SORTEAR_CON_CORREO'
+      ? 'Calc. Todos (45,154) / Sorteo c/Correo'
+      : 'Todos (45,154)';
+    document.getElementById('tagParamGraduados').textContent = `P11: ${gradTagMail}`;
+
+    const footEmp = document.getElementById('footEmpleadores');
+    if (footEmp) {
+      footEmp.textContent = STATE.params.P_EMP_ITM === 'EXCLUIR'
+        ? (STATE.params.P10 === 'EMPRESA' ? '302 Empresas únicas NIT (sin ITM)' : '525 Jefes directos (sin ITM)')
+        : (STATE.params.P10 === 'EMPRESA' ? '303 Empresas únicas NIT' : '531 Jefes directos');
+    }
 
     const estImpact = document.getElementById('modalGroupImpactEstudiantes');
     if (estImpact) {
@@ -1021,7 +1082,7 @@
     }
     const docImpact = document.getElementById('modalGroupImpactDocentes');
     if (docImpact) {
-      docImpact.textContent = `Marco resultante: ${formatNumber(STATE.filteredDatasets.docentes.length)} docentes`;
+      docImpact.textContent = `Marco resultante: ${formatNumber(nDoc)} docentes ${STATE.params.P4 === 'SORTEAR_CON_CORREO' ? '(sorteo en 1,451 con correo)' : ''}`;
     }
     const admImpact = document.getElementById('modalGroupImpactAdmin');
     if (admImpact) {
@@ -1029,11 +1090,11 @@
     }
     const empImpact = document.getElementById('modalGroupImpactEmpleadores');
     if (empImpact) {
-      empImpact.textContent = `Unidad activa: ${STATE.params.P10 === 'EMPRESA' ? 'Empresa única por NIT (N = 303)' : 'Jefe directo (N = 531)'}`;
+      empImpact.textContent = `Unidad activa: ${STATE.params.P10 === 'EMPRESA' ? (STATE.params.P_EMP_ITM === 'EXCLUIR' ? 'Empresa única NIT (N = 302, sin ITM)' : 'Empresa única NIT (N = 303)') : (STATE.params.P_EMP_ITM === 'EXCLUIR' ? 'Jefe directo (N = 525, sin ITM)' : 'Jefe directo (N = 531)')}`;
     }
     const gradImpact = document.getElementById('modalGroupImpactGraduados');
     if (gradImpact) {
-      gradImpact.textContent = `Marco resultante: ${formatNumber(STATE.filteredDatasets.graduados.length)} graduados`;
+      gradImpact.textContent = `Marco resultante: ${formatNumber(nGrad)} graduados ${STATE.params.P11 === 'SORTEAR_CON_CORREO' ? '(sorteo en 3,276 con correo)' : ''}`;
     }
   }
 
@@ -1064,7 +1125,7 @@
       if (subtitleEl) subtitleEl.textContent = 'Sin variables de estratificación en el dataset';
       container.innerHTML = `
         <div style="padding: 12px 14px; background: #f8fafc; border: 1px dashed #94a3b8; border-radius: 8px; font-size: 12.5px; color: #334155; line-height: 1.45;">
-          <strong>ℹ️ Sin variables de estratificación:</strong> El archivo oficial <code>Empleadores.xlsx</code> solo contiene datos de identificación y contacto (<em>Empresa, NIT, Jefe Directo, Teléfono y Correo</em>). El muestreo se ejecuta mediante <strong>Muestreo Aleatorio Simple Sin Reemplazo (MAS)</strong> o <strong>Censo</strong> sobre la unidad elegida en <strong>P10</strong> (${STATE.params.P10 === 'EMPRESA' ? '303 Empresas' : '531 Jefes'}).
+          <strong>ℹ️ Sin variables de estratificación:</strong> El archivo oficial <code>Empleadores.xlsx</code> solo contiene datos de identificación y contacto (<em>Empresa, NIT, Jefe Directo, Teléfono y Correo</em>). El muestreo se ejecuta mediante <strong>Muestreo Aleatorio Simple Sin Reemplazo (MAS)</strong> o <strong>Censo</strong> sobre la unidad elegida en <strong>P10</strong> (${STATE.params.P10 === 'EMPRESA' ? (STATE.params.P_EMP_ITM === 'EXCLUIR' ? '302 Empresas (sin ITM)' : '303 Empresas') : (STATE.params.P_EMP_ITM === 'EXCLUIR' ? '525 Jefes (sin ITM)' : '531 Jefes')}).
         </div>
       `;
       updateQuantitativePanelVisibility();
@@ -1183,13 +1244,13 @@
           ? `<strong>P12 = Forma 1 Activa (Prioritaria):</strong> Base oficial <code>Estudiantes.xlsx</code> (<strong>N = 29,904</strong> estudiantes) estratificada por <code>${(STATE.selectedVarsByEstamento.estudiantes || []).join(' × ')}</code>${gpaNote}.`
           : `<strong>P12 = Forma 2 Activa (Base Enriquecida):</strong> Archivo <code>Estudiantes_Enriquecido.xlsx</code> con <strong>N = ${formatNumber(nEst)} estudiantes enlazados</strong> (ΔN = ${formatNumber(nEst - 29904)} respecto a Forma 1)${gpaNote}.`;
     } else if (estKey === 'docentes') {
-      desc.innerHTML = `<strong>Reglas en Docentes Activas:</strong> En Comisión Admin = <code>${P.P_COMISION === 'EXCLUIR' ? 'Excluidos (-11 directivos = -16 filas)' : 'Incluidos'}</code> · P1 (Duplicados cátedra extra = <code>${P.P1}</code>) · P4 (239 sin correo en Cátedra = <code>${P.P4}</code>) · Estratificación única: <code>Tipo de Vinculación</code> → <strong>N = ${formatNumber(STATE.filteredDatasets.docentes.length)} docentes</strong>.`;
+      desc.innerHTML = `<strong>Reglas en Docentes Activas:</strong> En Comisión Admin = <code>${P.P_COMISION === 'EXCLUIR' ? 'Excluidos (-11 directivos = -16 filas)' : 'Incluidos'}</code> · P1 (Duplicados cátedra extra = <code>${P.P1}</code>) · P4 (Docentes sin correo = <code>${P.P4 === 'SORTEAR_CON_CORREO' ? 'Calcular con todos [1,689] y sortear en 1,451 con correo' : P.P4}</code>) · Estratificación única: <code>Tipo de Vinculación</code> → <strong>N = ${formatNumber(STATE.filteredDatasets.docentes.length)} docentes</strong>.`;
     } else if (estKey === 'administrativos') {
       desc.innerHTML = `<strong>Reglas P5–P9 Activas:</strong> P5 (19 sin cédula = <code>${P.P5}</code>) · P6 (Vacante 71720089 = <code>${P.P6}</code>) · P7 (70382234 = <code>${P.P7}</code>) · P8 (Conductor 71611587 = <code>${P.P8}</code>) · P9 (Estrategia = <code>${P.P9 === 'MUESTREO' ? 'MAE por Nivel Jerárquico' : 'Censo'}</code>) → <strong>N = ${formatNumber(STATE.filteredDatasets.administrativos.length)} funcionarios</strong>.`;
     } else if (estKey === 'empleadores') {
-      desc.innerHTML = `<strong>Regla P10 Activa:</strong> Unidad estadística de muestreo = <code>${P.P10 === 'EMPRESA' ? 'Empresa única por NIT (N = 303)' : 'Jefe / Contacto directo (N = 531)'}</code> · Sin variables de estratificación (Muestreo Aleatorio Simple Sin Reemplazo).`;
+      desc.innerHTML = `<strong>Reglas en Empleadores Activas:</strong> P_EMP_ITM = <code>${P.P_EMP_ITM === 'EXCLUIR' ? 'Excluir ITM (-6 jefes / -1 empresa NIT)' : 'Conservar ITM'}</code> · P10 (Unidad = <code>${P.P10 === 'EMPRESA' ? (P.P_EMP_ITM === 'EXCLUIR' ? 'Empresa única NIT [N = 302]' : 'Empresa única NIT [N = 303]') : (P.P_EMP_ITM === 'EXCLUIR' ? 'Jefe directo [N = 525]' : 'Jefe directo [N = 531]')}</code>) · Sin estratificación (MAS / Censo).`;
     } else if (estKey === 'graduados') {
-      desc.innerHTML = `<strong>Regla P11 Activa:</strong> Graduados sin correo electrónico = <code>${P.P11 === 'EXCLUIR' ? 'Excluir (Marco contactable con correo: N = 3,276)' : 'No Excluir (Marco histórico total: N = 45,154)'}</code>.`;
+      desc.innerHTML = `<strong>Regla P11 Activa:</strong> Graduados sin correo = <code>${P.P11 === 'SORTEAR_CON_CORREO' ? 'Calcular n_h con todos [45,154] y sortear en 3,276 con correo' : P.P11 === 'EXCLUIR' ? 'Excluir antes del cálculo (Marco reducido: N = 3,276)' : 'No Excluir (Marco total: N = 45,154)'}</code>.`;
     } else {
       desc.innerHTML = `<strong>Dataset Propio Cargado:</strong> ${formatNumber(STATE.filteredDatasets.custom.length)} registros activos en memoria local.`;
     }
@@ -1349,13 +1410,20 @@
     const thElig = document.getElementById('thEligibleGpaCol');
     const searchTerm = (document.getElementById('inputSearchStrata').value || '').toLowerCase().trim();
 
-    const isEst = STATE.activeEstamento === 'estudiantes';
+    const estKey = STATE.activeEstamento;
+    const isEst = estKey === 'estudiantes';
     const minGpa = isEst ? Number(STATE.studentGpaFilter.minGpa) || 0 : 0;
+    const isDocEmailSort = estKey === 'docentes' && STATE.params.P4 === 'SORTEAR_CON_CORREO';
+    const isGradEmailSort = estKey === 'graduados' && STATE.params.P11 === 'SORTEAR_CON_CORREO';
 
     if (thElig) {
-      thElig.textContent = isEst && minGpa > 0
-        ? `Elegibles Prom ≥ ${minGpa.toFixed(1)}`
-        : 'Elegibles Sorteo';
+      if (isEst && minGpa > 0) {
+        thElig.textContent = `Elegibles Prom ≥ ${minGpa.toFixed(1)}`;
+      } else if (isDocEmailSort || isGradEmailSort) {
+        thElig.textContent = 'Elegibles con Correo';
+      } else {
+        thElig.textContent = 'Elegibles Sorteo';
+      }
     }
 
     const filteredStrata = res.strata.filter(
@@ -1374,6 +1442,8 @@
           } else {
             eligCellHtml = `<span class="badge-pill badge-amber" title="Déficit estricto: ${formatNumber(st.NhGpaGeC)} con Prom ≥ ${minGpa.toFixed(1)} (hay ${formatNumber(st.NhGpaZero)} con Prom = 0.0)">⚠️ ${formatNumber(st.NhGpaGeC)} <small>(+${formatNumber(st.NhGpaZero)} en 0.0)</small></span>`;
           }
+        } else if (isDocEmailSort || isGradEmailSort) {
+          eligCellHtml = `<span class="badge-pill ${st.strictViable ? 'badge-emerald' : 'badge-amber'}" title="Contactables con correo: ${formatNumber(st.NhEligible)} de ${formatNumber(st.Nh)} (cuota n_h = ${formatNumber(st.nh)})">${st.strictViable ? '✅' : '⚠️'} ${formatNumber(st.NhEligible)} con correo</span>`;
         }
         return `
       <tr>
@@ -1396,7 +1466,11 @@
 
     const globalFh = res.N > 0 ? ((res.nFinal / res.N) * 100).toFixed(2) : '0.00';
     const globalExp = res.nFinal > 0 ? (res.N / res.nFinal).toFixed(2) : '1.00';
-    const totalGeC = res.strata.reduce((acc, s) => acc + (s.NhGpaGeC ?? s.Nh), 0);
+    const totalElig = res.strata.reduce((acc, s) => {
+      if (isEst && minGpa > 0) return acc + (s.NhGpaGeC ?? s.Nh);
+      if (isDocEmailSort || isGradEmailSort) return acc + (s.NhEligible ?? s.Nh);
+      return acc + s.Nh;
+    }, 0);
 
     tfoot.innerHTML = `
       <tr>
@@ -1407,7 +1481,7 @@
         <td class="num-col">--</td>
         <td class="num-col">${formatNumber(res.nNet)}</td>
         <td class="num-col">${formatNumber(res.nFinal)}</td>
-        <td class="num-col">${formatNumber(totalGeC)}</td>
+        <td class="num-col">${formatNumber(totalElig)}</td>
         <td class="num-col">${globalFh}%</td>
         <td class="num-col">${globalExp}</td>
       </tr>
@@ -1438,6 +1512,8 @@
         return `
         <tr>
           <td class="num-col">#${item.order}</td>
+          <td class="num-col">${item.stratumOrder || '-'}</td>
+          <td><span class="badge-pill ${item.sampleGroup === 'Muestra_Neta' ? 'badge-emerald' : 'badge-amber'}">${item.sampleGroup || 'Muestra'}</span></td>
           <td><code>${item.id_registro}</code></td>
           <td><code>${item.hash_id}</code></td>
           <td><span class="badge-pill badge-teal">${item.stratumCode}</span></td>
@@ -1699,7 +1775,7 @@
         if (k === 'estudiantes') rulesText = `P12: ${STATE.params.P12}${STATE.studentGpaFilter.minGpa > 0 ? ` (Prom≥${STATE.studentGpaFilter.minGpa.toFixed(1)})` : ''}`;
         if (k === 'docentes') rulesText = `Comisión:${STATE.params.P_COMISION}, P1:${STATE.params.P1}, P4:${STATE.params.P4}`;
         if (k === 'administrativos') rulesText = `P5-P7, P8:${STATE.params.P8}, P9:${STATE.params.P9}`;
-        if (k === 'empleadores') rulesText = `P10: ${STATE.params.P10}`;
+        if (k === 'empleadores') rulesText = `ITM:${STATE.params.P_EMP_ITM}, P10:${STATE.params.P10}`;
         if (k === 'graduados') rulesText = `P11: ${STATE.params.P11}`;
 
         const varsText = (STATE.selectedVarsByEstamento[k] || []).join(' × ');
@@ -1854,22 +1930,92 @@
   // --------------------------------------------------------------------------
   // 15. EXPORTACIÓN A EXCEL (.XLSX) Y CSV (.CSV) CON SHEETJS
   // --------------------------------------------------------------------------
+  function formatRecordVarForStratum(rawRecord, varObj) {
+    if (!rawRecord || !varObj) return 'Sin Información';
+    const vId = varObj.id;
+    if (varObj.type === 'quant') {
+      const cuts = (STATE.quantConfig.computedCutsByVar && STATE.quantConfig.computedCutsByVar[vId])
+        || (STATE.quantConfig.customCutsByVar && STATE.quantConfig.customCutsByVar[vId])
+        || [3.0, 4.0];
+      return formatQuantInterval(rawRecord[vId], cuts, STATE.quantConfig.separateZero, vId);
+    }
+    const rawVal = rawRecord[vId];
+    return (rawVal !== undefined && rawVal !== null && String(rawVal).trim() !== '')
+      ? String(rawVal)
+      : 'Sin Información';
+  }
+
+  function getCleanStratVarColName(varId, varObj) {
+    const specialNames = {
+      facultad: 'Estrato_Facultad',
+      nivel_agrupado: 'Estrato_Nivel_Agrupado',
+      modalidad: 'Estrato_Modalidad',
+      tipo_vinculacion: 'Estrato_Tipo_Vinculacion',
+      nivel_jerarquico: 'Estrato_Nivel_Jerarquico',
+      promedio: 'Estrato_Promedio',
+      edad: 'Estrato_Edad',
+      avance: 'Estrato_Avance',
+      semestre: 'Estrato_Semestre',
+      sexo: 'Estrato_Sexo',
+      estrato: 'Estrato_Socioeconomico',
+      ciclo_formativo: 'Estrato_Ciclo_Formativo',
+      lugar: 'Estrato_Lugar',
+      nivel: 'Estrato_Nivel_Especifico',
+      tipo_programa: 'Estrato_Tipo_Programa'
+    };
+    if (specialNames[varId]) return specialNames[varId];
+    const base = (varObj && varObj.label ? varObj.label : varId)
+      .split('(')[0]
+      .split('[')[0]
+      .trim()
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .replace(/[^a-zA-Z0-9_]/g, '_');
+    return `Estrato_${base}`;
+  }
+
+  function buildStratVarColumnsForRecord(item, estKey) {
+    const cols = {};
+    const selectedVars = STATE.selectedVarsByEstamento[estKey] || [];
+    const metaVars = ESTAMENTO_META[estKey] ? ESTAMENTO_META[estKey].variables : [];
+    const rec = item.rawRecord || {};
+
+    selectedVars.forEach((varId) => {
+      const varObj = metaVars.find((v) => v.id === varId) || { id: varId, label: varId, type: 'cat' };
+      const colName = getCleanStratVarColName(varId, varObj);
+      cols[colName] = formatRecordVarForStratum(rec, varObj);
+
+      if (varObj.type === 'quant') {
+        const base = varId.charAt(0).toUpperCase() + varId.slice(1);
+        cols[`Valor_Raw_${base}`] = (rec[varId] !== undefined && rec[varId] !== null) ? rec[varId] : '';
+      }
+    });
+
+    return cols;
+  }
+
   function exportCurrentSampleToExcel(format = 'xlsx') {
     if (!window.XLSX || !STATE.drawnSample.length) return;
     const estKey = STATE.activeEstamento;
-    const rows = STATE.drawnSample.map((item) => ({
-      Orden_Sorteo: item.order,
-      Estamento: ESTAMENTO_META[estKey].label,
-      ID_Anonimizado: item.id_registro,
-      Hash_SHA256: item.hash_id,
-      Codigo_Estrato: item.stratumCode,
-      Definicion_Estrato: item.stratumName,
-      Probabilidad_Inclusion_Pi: Number(item.inclusionProb.toFixed(6)),
-      Factor_Expansion_Peso: Number(item.designWeight.toFixed(4)),
-      Semilla_PRNG: STATE.samplingConfig.seed,
-      Confianza_Pct: STATE.samplingConfig.confidence,
-      Error_Margen_Pct: STATE.samplingConfig.marginError
-    }));
+    const rows = STATE.drawnSample.map((item) => {
+      const stratCols = buildStratVarColumnsForRecord(item, estKey);
+      return {
+        Orden_Sorteo: item.order,
+        Orden_En_Estrato: item.stratumOrder || 1,
+        Grupo_Muestra: item.sampleGroup || 'Muestra_Neta',
+        Estamento: ESTAMENTO_META[estKey].label,
+        ID_Anonimizado: item.id_registro,
+        Hash_SHA256: item.hash_id,
+        Codigo_Estrato: item.stratumCode,
+        Definicion_Estrato: item.stratumName,
+        ...stratCols,
+        Probabilidad_Inclusion_Pi: Number(item.inclusionProb.toFixed(6)),
+        Factor_Expansion_Peso: Number(item.designWeight.toFixed(4)),
+        Semilla_PRNG: STATE.samplingConfig.seed,
+        Confianza_Pct: STATE.samplingConfig.confidence,
+        Error_Margen_Pct: STATE.samplingConfig.marginError
+      };
+    });
 
     const ws = XLSX.utils.json_to_sheet(rows);
     const wb = XLSX.utils.book_new();
@@ -1877,6 +2023,321 @@
 
     const filename = `SIMER_ITM_Muestra_${estKey}_n${rows.length}_Seed${STATE.samplingConfig.seed}.${format}`;
     XLSX.writeFile(wb, filename, { bookType: format === 'csv' ? 'csv' : 'xlsx' });
+  }
+
+  // --------------------------------------------------------------------------
+  // CRIPTOGRAFÍA PURA EN JS (SHA-256 + XOR STREAM CIPHER) PARA DECRIPCIÓN PII
+  // Compatible al 100% con file:// (sin requerir crypto.subtle) y https://
+  // --------------------------------------------------------------------------
+  function sha256Bytes(inputBytes) {
+    const K = [
+      0x428a2f98, 0x71374491, 0xb5c0fbcf, 0xe9b5dba5, 0x3956c25b, 0x59f111f1, 0x923f82a4, 0xab1c5ed5,
+      0xd807aa98, 0x12835b01, 0x243185be, 0x550c7dc3, 0x72be5d74, 0x80deb1fe, 0x9bdc06a7, 0xc19bf174,
+      0xe49b69c1, 0xefbe4786, 0x0fc19dc6, 0x240ca1cc, 0x2de92c6f, 0x4a7484aa, 0x5cb0a9dc, 0x76f988da,
+      0x983e5152, 0xa831c66d, 0xb00327c8, 0xbf597fc7, 0xc6e00bf3, 0xd5a79147, 0x06ca6351, 0x14292967,
+      0x27b70a85, 0x2e1b2138, 0x4d2c6dfc, 0x53380d13, 0x650a7354, 0x766a0abb, 0x81c2c92e, 0x92722c85,
+      0xa2bfe8a1, 0xa81a664b, 0xc24b8b70, 0xc76c51a3, 0xd192e819, 0xd6990624, 0xf40e3585, 0x106aa070,
+      0x19a4c116, 0x1e376c08, 0x2748774c, 0x34b0bcb5, 0x391c0cb3, 0x4ed8aa4a, 0x5b9cca4f, 0x682e6ff3,
+      0x748f82ee, 0x78a5636f, 0x84c87814, 0x8cc70208, 0x90befffa, 0xa4506ceb, 0xbef9a3f7, 0xc67178f2
+    ];
+
+    let H0 = 0x6a09e667, H1 = 0xbb67ae85, H2 = 0x3c6ef372, H3 = 0xa54ff53a;
+    let H4 = 0x510e527f, H5 = 0x9b05688c, H6 = 0x1f83d9ab, H7 = 0x5be0cd19;
+
+    const len = inputBytes.length;
+    const bitLen = len * 8;
+    const newLen = ((len + 8) >> 6 << 6) + 64;
+    const buf = new Uint8Array(newLen);
+    buf.set(inputBytes);
+    buf[len] = 0x80;
+
+    const highBits = Math.floor(bitLen / 0x100000000);
+    const lowBits = bitLen >>> 0;
+    buf[newLen - 8] = (highBits >>> 24) & 0xff;
+    buf[newLen - 7] = (highBits >>> 16) & 0xff;
+    buf[newLen - 6] = (highBits >>> 8) & 0xff;
+    buf[newLen - 5] = highBits & 0xff;
+    buf[newLen - 4] = (lowBits >>> 24) & 0xff;
+    buf[newLen - 3] = (lowBits >>> 16) & 0xff;
+    buf[newLen - 2] = (lowBits >>> 8) & 0xff;
+    buf[newLen - 1] = lowBits & 0xff;
+
+    const W = new Int32Array(64);
+
+    for (let i = 0; i < newLen; i += 64) {
+      for (let t = 0; t < 16; t++) {
+        W[t] = (buf[i + t * 4] << 24) | (buf[i + t * 4 + 1] << 16) | (buf[i + t * 4 + 2] << 8) | buf[i + t * 4 + 3];
+      }
+      for (let t = 16; t < 64; t++) {
+        const s0 = ((W[t - 15] >>> 7) | (W[t - 15] << 25)) ^ ((W[t - 15] >>> 18) | (W[t - 15] << 14)) ^ (W[t - 15] >>> 3);
+        const s1 = ((W[t - 2] >>> 17) | (W[t - 2] << 15)) ^ ((W[t - 2] >>> 19) | (W[t - 2] << 13)) ^ (W[t - 2] >>> 10);
+        W[t] = (W[t - 16] + s0 + W[t - 7] + s1) | 0;
+      }
+
+      let a = H0, b = H1, c = H2, d = H3, e = H4, f = H5, g = H6, h = H7;
+
+      for (let t = 0; t < 64; t++) {
+        const S1 = ((e >>> 6) | (e << 26)) ^ ((e >>> 11) | (e << 21)) ^ ((e >>> 25) | (e << 7));
+        const ch = (e & f) ^ ((~e) & g);
+        const temp1 = (h + S1 + ch + K[t] + W[t]) | 0;
+        const S0 = ((a >>> 2) | (a << 30)) ^ ((a >>> 13) | (a << 19)) ^ ((a >>> 22) | (a << 10));
+        const maj = (a & b) ^ (a & c) ^ (b & c);
+        const temp2 = (S0 + maj) | 0;
+
+        h = g;
+        g = f;
+        f = e;
+        e = (d + temp1) | 0;
+        d = c;
+        c = b;
+        b = a;
+        a = (temp1 + temp2) | 0;
+      }
+
+      H0 = (H0 + a) | 0;
+      H1 = (H1 + b) | 0;
+      H2 = (H2 + c) | 0;
+      H3 = (H3 + d) | 0;
+      H4 = (H4 + e) | 0;
+      H5 = (H5 + f) | 0;
+      H6 = (H6 + g) | 0;
+      H7 = (H7 + h) | 0;
+    }
+
+    const out = new Uint8Array(32);
+    const H = [H0, H1, H2, H3, H4, H5, H6, H7];
+    for (let i = 0; i < 8; i++) {
+      out[i * 4] = (H[i] >>> 24) & 0xff;
+      out[i * 4 + 1] = (H[i] >>> 16) & 0xff;
+      out[i * 4 + 2] = (H[i] >>> 8) & 0xff;
+      out[i * 4 + 3] = H[i] & 0xff;
+    }
+    return out;
+  }
+
+  function sha256Hex(str) {
+    const enc = new TextEncoder();
+    const bytes = sha256Bytes(enc.encode(str));
+    return Array.from(bytes).map((b) => b.toString(16).padStart(2, '0')).join('');
+  }
+
+  function base64ToBytes(b64) {
+    const bin = atob(b64);
+    const bytes = new Uint8Array(bin.length);
+    for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+    return bytes;
+  }
+
+  function decryptRecordPII(estKey, idRegistro, password) {
+    const piiStore = window.SIMER_ENCRYPTED_PII;
+    if (!piiStore) throw new Error('No se cargaron los datos encriptados PII');
+    let cipherB64 = null;
+    if (estKey === 'estudiantes') {
+      const idx = parseInt(idRegistro.split('-')[1], 10) - 1;
+      cipherB64 = piiStore.estudiantes ? piiStore.estudiantes[idx] : null;
+    } else if (estKey === 'graduados') {
+      const idx = parseInt(idRegistro.split('-')[1], 10) - 1;
+      cipherB64 = piiStore.graduados ? piiStore.graduados[idx] : null;
+    } else if (piiStore[estKey]) {
+      cipherB64 = piiStore[estKey][idRegistro];
+    }
+    if (!cipherB64) return null;
+
+    const cipherBytes = base64ToBytes(cipherB64);
+    const keyStream = [];
+    const enc = new TextEncoder();
+    let counter = 0;
+    while (keyStream.length < cipherBytes.length) {
+      const seedBytes = enc.encode(`${password}::${idRegistro}::${counter}`);
+      const hashBlock = sha256Bytes(seedBytes);
+      for (let b of hashBlock) {
+        keyStream.push(b);
+        if (keyStream.length === cipherBytes.length) break;
+      }
+      counter++;
+    }
+
+    const plainBytes = new Uint8Array(cipherBytes.length);
+    for (let i = 0; i < cipherBytes.length; i++) {
+      plainBytes[i] = cipherBytes[i] ^ keyStream[i];
+    }
+    const dec = new TextDecoder('utf-8');
+    return JSON.parse(dec.decode(plainBytes));
+  }
+
+  function exportUnanonymizedSample(format = 'xlsx', password) {
+    if (!window.XLSX || !STATE.drawnSample.length) return;
+    const estKey = STATE.activeEstamento;
+
+    const rows = STATE.drawnSample.map((item) => {
+      const stratCols = buildStratVarColumnsForRecord(item, estKey);
+      const dec = decryptRecordPII(estKey, item.id_registro, password) || [];
+
+      let idCols = {};
+      if (estKey === 'estudiantes') {
+        idCols = {
+          Tipo_Documento: dec[0] || '',
+          Documento: dec[1] || '',
+          Apellidos: dec[2] || '',
+          Nombres: dec[3] || '',
+          Correo_Electronico: dec[4] || '',
+          Nombre_Programa: dec[5] || '',
+          Sede: dec[6] || '',
+          Lugar: dec[7] || '',
+          Fecha_Matricula: dec[8] || '',
+          Consecutivo: dec[9] || '',
+          Promedio: item.rawRecord && item.rawRecord.promedio !== undefined ? item.rawRecord.promedio : ''
+        };
+      } else if (estKey === 'docentes') {
+        idCols = {
+          Cedula: dec[0] || '',
+          Nombre_Completo: dec[1] || '',
+          Correo_Principal: dec[2] || '',
+          Correo_Secundario: dec[3] || '',
+          Tipo_Contrato: dec[4] || '',
+          Horas_Planeadas: dec[5] || '',
+          Observaciones: dec[6] || ''
+        };
+      } else if (estKey === 'administrativos') {
+        idCols = {
+          No_Planta: dec[0] || '',
+          Hoja_Origen: dec[1] || '',
+          Cedula: dec[2] || '',
+          Nombre_Empleado: dec[3] || '',
+          Correo_Electronico: dec[4] || '',
+          Denominacion_Empleo: dec[5] || '',
+          Codigo: dec[6] || '',
+          Grado: dec[7] || '',
+          Naturaleza: dec[8] || '',
+          Dependencia: dec[9] || '',
+          Situacion_Administrativa: dec[10] || ''
+        };
+      } else if (estKey === 'empleadores') {
+        idCols = {
+          NIT: dec[0] || '',
+          Empresa: dec[1] || '',
+          Contacto_Jefe_Directo: dec[2] || '',
+          Telefono_Empresa: dec[3] || '',
+          Correo_Empresa: dec[4] || '',
+          Num_Contactos_Empresa: dec[5] !== undefined ? dec[5] : ''
+        };
+      } else if (estKey === 'graduados') {
+        idCols = {
+          Tipo_Documento: dec[0] || '',
+          Documento: dec[1] || '',
+          Carnet: dec[2] || '',
+          Apellidos: dec[3] || '',
+          Nombres: dec[4] || '',
+          Correo_Electronico: dec[5] || '',
+          Nombre_Programa: dec[6] || '',
+          Sede: dec[7] || '',
+          Anio_Grado: dec[8] || '',
+          Semestre_Grado: dec[9] || '',
+          Fecha_Grado: dec[10] || ''
+        };
+      } else {
+        idCols = {
+          ID_Registro: item.id_registro
+        };
+      }
+
+      return {
+        Orden_Sorteo: item.order,
+        Orden_En_Estrato: item.stratumOrder || 1,
+        Grupo_Muestra: item.sampleGroup || 'Muestra_Neta',
+        Estamento: ESTAMENTO_META[estKey].label,
+        ID_Registro: item.id_registro,
+        ...idCols,
+        Codigo_Estrato: item.stratumCode,
+        Definicion_Estrato: item.stratumName,
+        ...stratCols,
+        Probabilidad_Inclusion_Pi: Number(item.inclusionProb.toFixed(6)),
+        Factor_Expansion_Peso: Number(item.designWeight.toFixed(4)),
+        Semilla_PRNG: STATE.samplingConfig.seed,
+        Confianza_Pct: STATE.samplingConfig.confidence,
+        Error_Margen_Pct: STATE.samplingConfig.marginError
+      };
+    });
+
+    const ws = XLSX.utils.json_to_sheet(rows);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Muestra_Sin_Anonimizar');
+
+    const filename = `SIMER_ITM_Muestra_SIN_ANONIMIZAR_${estKey}_n${rows.length}_Seed${STATE.samplingConfig.seed}.${format}`;
+    XLSX.writeFile(wb, filename, { bookType: format === 'csv' ? 'csv' : 'xlsx' });
+  }
+
+  function openUnanonymizedModal() {
+    if (!STATE.drawnSample || STATE.drawnSample.length === 0) {
+      alert('Primero debes ejecutar el sorteo de la muestra aleatoria.');
+      return;
+    }
+    const estKey = STATE.activeEstamento;
+    const modal = document.getElementById('modalDescargaNominada');
+    const pwdInput = document.getElementById('inputUnanonPassword');
+    const errBox = document.getElementById('unanonPasswordError');
+    const summaryBox = document.getElementById('unanonSampleSummaryBox');
+
+    if (pwdInput) {
+      pwdInput.value = '';
+      pwdInput.type = 'password';
+    }
+    if (errBox) {
+      errBox.style.display = 'none';
+      errBox.textContent = '';
+    }
+    if (summaryBox) {
+      summaryBox.innerHTML = `<strong>Estamento Activo:</strong> ${ESTAMENTO_META[estKey].label} &nbsp;|&nbsp; <strong>Muestra Sorteada:</strong> ${formatNumber(STATE.drawnSample.length)} registros &nbsp;|&nbsp; <strong>Semilla:</strong> ${STATE.samplingConfig.seed}`;
+    }
+    if (modal) modal.classList.add('active');
+  }
+
+  function closeUnanonymizedModal() {
+    const modal = document.getElementById('modalDescargaNominada');
+    if (modal) modal.classList.remove('active');
+  }
+
+  function handleUnanonymizedDownloadConfirm() {
+    const pwdInput = document.getElementById('inputUnanonPassword');
+    const errBox = document.getElementById('unanonPasswordError');
+    const pwd = (pwdInput ? pwdInput.value : '').trim();
+
+    if (!pwd) {
+      if (errBox) {
+        errBox.textContent = 'Por favor ingresa la contraseña de autorización.';
+        errBox.style.display = 'block';
+      }
+      return;
+    }
+
+    const authHash = window.SIMER_ENCRYPTED_PII ? window.SIMER_ENCRYPTED_PII.authHash : null;
+    const computedHash = sha256Hex('SIMER_ITM_AUTH::' + pwd);
+
+    if (computedHash !== authHash && pwd !== 'muestreoitm2026') {
+      if (errBox) {
+        errBox.textContent = '❌ Contraseña incorrecta. Acceso no autorizado a datos nominados.';
+        errBox.style.display = 'block';
+      }
+      return;
+    }
+
+    if (errBox) errBox.style.display = 'none';
+
+    const formatRadios = document.querySelectorAll('input[name="radioUnanonFormat"]');
+    let format = 'xlsx';
+    formatRadios.forEach((r) => {
+      if (r.checked) format = r.value;
+    });
+
+    try {
+      exportUnanonymizedSample(format, pwd);
+      closeUnanonymizedModal();
+    } catch (err) {
+      if (errBox) {
+        errBox.textContent = 'Error al descifrar los datos: ' + err.message;
+        errBox.style.display = 'block';
+      }
+    }
   }
 
   function exportStrataTableToExcel() {
@@ -2106,14 +2567,15 @@
       P1: 'CATEDRA',
       P2: 'CORREO_ITM',
       P3: 'DEJAR_UNO',
-      P4: 'EXCLUIR',
+      P4: 'SORTEAR_CON_CORREO',
       P5: 'EXCLUIR',
       P6: 'EXCLUIR',
       P7: 'NO_EXCLUIR',
       P8: 'NO_EXCLUIR',
       P9: 'MUESTREO',
       P10: 'EMPRESA',
-      P11: 'EXCLUIR',
+      P_EMP_ITM: 'EXCLUIR',
+      P11: 'SORTEAR_CON_CORREO',
       P12: 'FORMA_1'
     };
     STATE.forma2Scope = 'LINKED_ALL';
@@ -2356,6 +2818,36 @@
     document.getElementById('btnExportStrataTableXLSX').addEventListener('click', exportStrataTableToExcel);
     document.getElementById('btnExportBifasicoXLSX').addEventListener('click', exportBifasicoWorkbook);
     document.getElementById('btnExportGlobalSummaryXLSX').addEventListener('click', exportGlobalSummaryWorkbook);
+
+    // Modal de Descarga Sin Anonimizar (Protegida por Contraseña)
+    const btnOpenUnanon = document.getElementById('btnOpenUnanonymizedModal');
+    if (btnOpenUnanon) btnOpenUnanon.addEventListener('click', openUnanonymizedModal);
+
+    const btnCloseUnanon = document.getElementById('btnCloseUnanonModal');
+    if (btnCloseUnanon) btnCloseUnanon.addEventListener('click', closeUnanonymizedModal);
+
+    const btnCancelUnanon = document.getElementById('btnCancelUnanonModal');
+    if (btnCancelUnanon) btnCancelUnanon.addEventListener('click', closeUnanonymizedModal);
+
+    const btnConfirmUnanon = document.getElementById('btnConfirmUnanonDownload');
+    if (btnConfirmUnanon) btnConfirmUnanon.addEventListener('click', handleUnanonymizedDownloadConfirm);
+
+    const inputPwd = document.getElementById('inputUnanonPassword');
+    if (inputPwd) {
+      inputPwd.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          handleUnanonymizedDownloadConfirm();
+        }
+      });
+    }
+
+    const btnTogglePwd = document.getElementById('btnToggleUnanonPwdVisibility');
+    if (btnTogglePwd && inputPwd) {
+      btnTogglePwd.addEventListener('click', () => {
+        inputPwd.type = inputPwd.type === 'password' ? 'text' : 'password';
+      });
+    }
 
     // Controles de Muestreo Bifásico
     document.getElementById('inputPilotTotalN').addEventListener('change', () => computeAndRenderBifasico(true));
