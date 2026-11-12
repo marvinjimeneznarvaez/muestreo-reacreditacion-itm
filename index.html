@@ -55,7 +55,7 @@
               Institucional</span>
           </h1>
           <div class="author-byline-header">
-            <span class="author-byline-tag">Autor y Diseño Estadístico:</span>
+            <span class="author-byline-tag">Diseño Estadístico, Ciencia de Datos y Desarrollo de Software:</span>
             <strong class="author-byline-name">Marvin Luis Jiménez Narváez</strong>
             <span class="author-byline-sep">·</span>
             <span class="author-byline-role">Docente Ocasional — Facultad de Ciencias Exactas y Aplicadas, ITM</span>
@@ -355,35 +355,6 @@
                   <button type="button" class="btn-preset-gpa" data-gpa="3.0">≥ 3.0</button>
                 </div>
               </div>
-
-              <div class="gpa-control-item gpa-zero-rule-item">
-                <span class="control-label">¿Qué hacer con los estudiantes que tienen promedio 0.0? <span
-                    class="gpa-zero-count" id="gpaZeroCountLabel">—</span></span>
-                <p class="gpa-zero-explainer">
-                  Un promedio de 0.0 <strong>no indica bajo rendimiento</strong>: lo más probable es que sean
-                  estudiantes nuevos o de posgrado que aún no tienen promedio acumulado registrado (conviene confirmarlo
-                  con Admisiones y Registro). Por eso se tratan aparte de los que tienen promedio bajo (entre 0 y $c$),
-                  que sí se excluyen del sorteo.
-                </p>
-                <div class="gpa-zero-options" role="radiogroup">
-                  <label class="gpa-zero-option">
-                    <input type="radio" name="gpaZeroRule" value="STRICT_WITH_FALLBACK" checked />
-                    <span><strong>Usarlos solo para completar (recomendado).</strong> Se sortea primero entre quienes
-                      tienen promedio ≥ $c$. Solo si en un estrato no alcanzan, se completa con estudiantes de promedio
-                      0.0 de ese mismo estrato.</span>
-                  </label>
-                  <label class="gpa-zero-option">
-                    <input type="radio" name="gpaZeroRule" value="INCLUDE_ZERO" />
-                    <span><strong>Incluirlos siempre.</strong> En todos los estratos se sortea entre quienes tienen
-                      promedio ≥ $c$ y quienes tienen promedio 0.0, con la misma probabilidad.</span>
-                  </label>
-                  <label class="gpa-zero-option">
-                    <input type="radio" name="gpaZeroRule" value="STRICT_PURE" />
-                    <span><strong>No usarlos nunca.</strong> Solo participan los de promedio ≥ $c$. Si en un estrato no
-                      alcanzan, ese estrato queda con menos encuestados de los requeridos.</span>
-                  </label>
-                </div>
-              </div>
             </div>
           </div>
 
@@ -414,11 +385,12 @@
                 <span>Estrategia de Muestreo / Afijación</span>
               </label>
               <select id="selectSamplingDesign" class="form-select">
-                <option value="PROPORCIONAL" selected>MAE — Afijación Proporcional (w_h = N_h / N)</option>
-                <option value="NEYMAN">MAE — Afijación Óptima de Neyman (w_h ∝ N_h · S_h)</option>
+                <option value="PROPORCIONAL" selected>MAE — Afijación Proporcional (wₕ = Nₕ / N)</option>
+                <option value="NEYMAN">MAE — Afijación Óptima de Neyman (wₕ ∝ Nₕ · Sₕ)</option>
                 <option value="MAS">MAS — Muestreo Aleatorio Simple Sin Reemplazo</option>
                 <option value="CENSO">Censo Institucional Completo (n = N)</option>
               </select>
+              <span class="control-help" id="samplingDesignFormulaHelp">Afijación proporcional: $n_h = n \cdot (N_h / N)$</span>
             </div>
 
             <!-- Selector de Nivel de Confianza (90% a 99% paso 1%) -->
@@ -473,9 +445,9 @@
               <div class="control-group">
                 <div class="label-row">
                   <label for="inputTNR" class="control-label">No Respuesta ($\text{TNR}$)</label>
-                  <span class="value-chip chip-amber" id="valTNRDisplay">0%</span>
+                  <span class="value-chip chip-amber" id="valTNRDisplay">20%</span>
                 </div>
-                <input type="number" id="inputTNR" class="form-input" min="0" max="50" step="5" value="0" />
+                <input type="number" id="inputTNR" class="form-input" min="0" max="50" step="5" value="20" />
                 <span class="control-help">$n_{\text{adj}} = \lceil n / (1 - \text{TNR}) \rceil$</span>
               </div>
             </div>
@@ -702,9 +674,9 @@
                   <h3 class="panel-title">Comparativa Población vs. Muestra Asignada</h3>
                 </div>
                 <select id="selectChartMetricView" class="form-select-sm">
-                  <option value="SAMPLE_BARS" selected>Tamaño de Muestra (n_h) por Estrato</option>
-                  <option value="POP_VS_SAMPLE">Población (N_h) vs Muestra (n_h) [Escala Log/Dual]</option>
-                  <option value="WEIGHTS">Pesos de Estratificación W_h (%)</option>
+                  <option value="SAMPLE_BARS" selected>Tamaño de Muestra (nₕ) por Estrato</option>
+                  <option value="POP_VS_SAMPLE">Población (Nₕ) vs Muestra (nₕ) [Escala Log/Dual]</option>
+                  <option value="WEIGHTS">Pesos de Estratificación Wₕ (%)</option>
                 </select>
               </div>
               <div id="plotStrataAllocation" class="plotly-chart-box" style="height: 360px;"></div>
@@ -854,7 +826,7 @@
               <label for="selectBifasicoAllocation" class="control-label">Afijación para Muestra Definitiva
                 ($n_{\text{final}}$):</label>
               <select id="selectBifasicoAllocation" class="form-select">
-                <option value="NEYMAN" selected>Afijación Óptima de Neyman con S_h del Piloto</option>
+                <option value="NEYMAN" selected>Afijación Óptima de Neyman con Sₕ del Piloto</option>
                 <option value="PROPORCIONAL">Afijación Proporcional con Varianza del Piloto</option>
               </select>
             </div>
@@ -1051,18 +1023,12 @@
                 <td class="num-col">232 filas<br /><small>Sin cambios</small></td>
                 <td>
                   <ul>
-                    <li><strong>19 registros</strong> en hoja <code>ADMINISTRATIVOS</code> con <code>CÉDULA</code> vacía
-                      (<code>BNLE</code>, <code>ANTIOQUIA 3</code>, <code>Vacante</code>) y sin correo.</li>
-                    <li><strong>Cédula 71720089</strong> repetida 2 veces: fila activa en <em>Encargo</em> (con correo)
-                      y fila en <em>Vacante temporal</em> (<code>VCACANTE - Robinson Sánchez Zambrano</code>, sin
-                      correo).</li>
-                    <li><strong>Cédula 70382234</strong> con error de digitación
-                      <code>DEPENDENCIA = "claudia patricia"</code> (cargo Director Administrativo, No Excluir).</li>
-                    <li><strong>Cédula 71611587</strong> en hoja <code>RECTORIA</code> (Conductor) sin correo
-                      electrónico (No Excluir por defecto $\to N = 212$).</li>
+                    <li><strong>20 registros</strong> en condición de vacante sin correo (19 plazas vacantes sin identificación + 1 vacante temporal).</li>
+                    <li><strong>1 directivo</strong> con error de tipografía en campo dependencia (conservado en el marco).</li>
+                    <li><strong>1 cargo operativo</strong> en Rectoría sin correo institucional (conservado en el marco).</li>
                   </ul>
                 </td>
-                <td><span class="badge-pill badge-emerald">Parámetros P5, P6, P7, P8 y P9 (MAE)</span></td>
+                <td><span class="badge-pill badge-emerald">Parámetros P5, P7, P8 y P9 (MAE)</span></td>
               </tr>
               <tr>
                 <td><strong>4. Empleadores</strong><br /><code>Empleadores.xlsx</code></td>
@@ -1552,24 +1518,23 @@
             <!-- P5 -->
             <div class="param-card">
               <div class="param-card-top">
-                <span class="param-code">PARÁMETRO P5 · 19 VACANTES SIN CÉDULA</span>
+                <span class="param-code">PARÁMETRO P5 · 20 CARGOS EN CONDICIÓN DE VACANTE</span>
                 <span class="param-default-badge">Por defecto: Excluir</span>
               </div>
-              <h4>19 registros en hoja <code>ADMINISTRATIVOS</code> con <code>CÉDULA</code> vacía, sin correo y con
-                texto <code>BNLE</code>, <code>ANTIOQUIA 3</code> o <code>Vacante</code>:</h4>
-              <p>Son cargos de planta vacantes sin persona asignada.</p>
+              <h4>20 registros en hoja <code>ADMINISTRATIVOS</code> identificados como cargos en condición de vacante (etiquetas Vacante, VCACANTE, BNLE o ANTIOQUIA 3) sin correo electrónico:</h4>
+              <p>Corresponden a plazas administrativas vacantes o filas de encargo vacante sin correo asignado.</p>
               <div class="param-choices-row" data-param-group="P5">
                 <button type="button" class="param-choice-btn active" data-param="P5" data-val="EXCLUIR">
                   <div class="choice-top">
                     <span class="choice-radio">●</span>
-                    <strong class="choice-title">Excluir (-19 vacantes)</strong>
+                    <strong class="choice-title">Excluir (-20 vacantes)</strong>
                     <span class="choice-tag-default">Por defecto</span>
                   </div>
                 </button>
                 <button type="button" class="param-choice-btn" data-param="P5" data-val="NO_EXCLUIR">
                   <div class="choice-top">
                     <span class="choice-radio">○</span>
-                    <strong class="choice-title">No Excluir (+19 filas)</strong>
+                    <strong class="choice-title">No Excluir (+20 filas)</strong>
                   </div>
                 </button>
               </div>
@@ -1579,47 +1544,14 @@
               </select>
             </div>
 
-            <!-- P6 -->
-            <div class="param-card">
-              <div class="param-card-top">
-                <span class="param-code">PARÁMETRO P6 · CÉDULA 71720089 (VCACANTE)</span>
-                <span class="param-default-badge">Por defecto: Excluir</span>
-              </div>
-              <h4>Registro con <code>CÉDULA 71720089</code> sin correo y nombre
-                <code>VCACANTE (Robinson Sánchez Zambrano)</code>:</h4>
-              <p>Este funcionario ya aparece activo con correo en el cargo #87 (Encargo), por lo que la fila #166 sin
-                correo duplica su cédula.</p>
-              <div class="param-choices-row" data-param-group="P6">
-                <button type="button" class="param-choice-btn active" data-param="P6" data-val="EXCLUIR">
-                  <div class="choice-top">
-                    <span class="choice-radio">●</span>
-                    <strong class="choice-title">Excluir fila vacante (-1)</strong>
-                    <span class="choice-tag-default">Por defecto</span>
-                  </div>
-                </button>
-                <button type="button" class="param-choice-btn" data-param="P6" data-val="NO_EXCLUIR">
-                  <div class="choice-top">
-                    <span class="choice-radio">○</span>
-                    <strong class="choice-title">No Excluir (+1 fila)</strong>
-                  </div>
-                </button>
-              </div>
-              <select id="param_P6" class="form-select param-input hidden-select">
-                <option value="EXCLUIR" selected>EXCLUIR</option>
-                <option value="NO_EXCLUIR">NO_EXCLUIR</option>
-              </select>
-            </div>
-
             <!-- P7 -->
             <div class="param-card">
               <div class="param-card-top">
-                <span class="param-code">PARÁMETRO P7 · CÉDULA 70382234 ("claudia patricia")</span>
+                <span class="param-code">PARÁMETRO P7 · REGISTRO CON ERROR EN CAMPO DEPENDENCIA</span>
                 <span class="param-default-badge">Por defecto: No Excluir</span>
               </div>
-              <h4>Registro con <code>CÉDULA 70382234</code> que tiene en <code>DEPENDENCIA</code> el valor
-                <code>"claudia patricia"</code>:</h4>
-              <p>Es un Director Administrativo real con correo válido; además la única variable de estratificación en
-                Administrativos es el <strong>Nivel Jerárquico</strong>.</p>
+              <h4>Funcionario con cargo Director Administrativo que registra error de tipografía en el campo <code>DEPENDENCIA</code>:</h4>
+              <p>Es un funcionario directivo real con correo institucional activo; además la estratificación en Administrativos opera sobre el <strong>Nivel Jerárquico</strong>.</p>
               <div class="param-choices-row" data-param-group="P7">
                 <button type="button" class="param-choice-btn active" data-param="P7" data-val="NO_EXCLUIR">
                   <div class="choice-top">
@@ -1644,13 +1576,11 @@
             <!-- P8 -->
             <div class="param-card">
               <div class="param-card-top">
-                <span class="param-code">PARÁMETRO P8 · CÉDULA 71611587 (CONDUCTOR SIN CORREO)</span>
+                <span class="param-code">PARÁMETRO P8 · CARGO EN RECTORÍA SIN CORREO ELECTRÓNICO</span>
                 <span class="param-default-badge">Por defecto: No Excluir</span>
               </div>
-              <h4>Registro en hoja <code>RECTORIA</code> con <code>CÉDULA 71611587</code> (Conductor) que no tiene
-                correo electrónico:</h4>
-              <p>Por acuerdo institucional se conserva en el marco de Rectoría (pudiendo aplicarse encuesta asistida si
-                resulta seleccionado).</p>
+              <h4>Funcionario en hoja <code>RECTORIA</code> (cargo operativo/conductor) que no tiene registrado correo electrónico institucional:</h4>
+              <p>Por acuerdo institucional se conserva en el marco de Rectoría (pudiendo aplicarse encuesta asistida si resulta seleccionado).</p>
               <div class="param-choices-row" data-param-group="P8">
                 <button type="button" class="param-choice-btn active" data-param="P8" data-val="NO_EXCLUIR">
                   <div class="choice-top">
@@ -1926,8 +1856,7 @@
         Instituto Tecnológico Metropolitano (ITM), Medellín, Colombia.
       </div>
       <div class="footer-right">
-        Desarrollado por <strong>Marvin Luis Jiménez Narváez</strong> · Docente Ocasional — Facultad de Ciencias Exactas
-        y Aplicadas, ITM.
+        Diseño Estadístico, Ciencia de Datos y Desarrollo de Software: <strong>Marvin Luis Jiménez Narváez</strong> · Docente Ocasional — Facultad de Ciencias Exactas y Aplicadas, ITM.
       </div>
     </div>
   </footer>
