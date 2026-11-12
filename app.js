@@ -1337,9 +1337,16 @@
         n_0 &= \\frac{\\left(\\sum_{h=1}^{${res.H}} W_h S_h\\right)^2}{\\dfrac{(${estr})^2}{(${Zstr})^2} + \\dfrac{1}{${fmtMath(res.N)}}\\sum_{h=1}^{${res.H}} W_h S_h^2} = \\mathbf{${fmtMath(res.nNet)}}, \\qquad n = \\left\\lceil \\frac{n_0}{1 - \\text{TNR}} \\right\\rceil = \\left\\lceil \\frac{${fmtMath(res.nNet)}}{1 - ${res.tnr.toFixed(2)}} \\right\\rceil = \\mathbf{${fmtMath(res.nFinal)}} \\quad (\\text{TNR} = ${tnrPct}\\%) \\\\[6pt]
         w_h &= \\frac{N_h S_h}{\\sum_{k=1}^{${res.H}} N_k S_k} \\implies n_h = \\max\\left(1, \\left\\lceil n \\cdot w_h \\right\\rceil\\right) \\quad \\left(\\text{con } n_h = N_h \\text{ en micro-estratos } N_h \\le 5\\right)
       \\end{aligned}$$`;
-      noteHtml = `
+      const isMaxVar = Math.abs(res.p - 0.50) < 0.001;
+      const pqVal = (res.p * (1 - res.p)).toFixed(4);
+      noteHtml = isMaxVar
+        ? `
         <div class="formula-equivalence-note">
-          <strong>¿Por qué coinciden los valores numéricos con la Afijación Proporcional en esta pestaña?</strong> Bajo el supuesto conservador <em>a priori</em> de varianza máxima homogénea ($p_h = p = ${res.p.toFixed(2)}$ en todos los estratos), la desviación estándar intra-estrato es constante ($S_h = \\sqrt{p(1-p)} \\approx ${ShVal} \\; \\forall h$). Por el <strong>Teorema de Cochran (1977)</strong>, cuando $S_h$ es constante entre estratos, el factor $S_h$ se cancela en $w_h^{\\text{Neyman}} = \\frac{N_h S_h}{\\sum N_k S_k} = \\frac{N_h}{N} = W_h$, produciendo exactamente el mismo tamaño muestral y la misma asignación por estrato que la Afijación Proporcional. La Afijación de Neyman asigna cuotas distintas cuando los estratos presentan desviaciones $S_h$ heterogéneas (explorable en la <strong>Pestaña 2: Muestra Preliminar vs. Definitiva</strong> con $\\hat{p}_{0h}$ diferenciados por estrato).
+          <strong>¿Por qué coinciden los valores numéricos con la Afijación Proporcional en esta pestaña ($p = 0.50$)?</strong> Bajo el supuesto conservador <em>a priori</em> de varianza máxima homogénea ($p_1 = p_2 = \\dots = p_{${res.H}} = 0.50$), la desviación estándar intra-estrato es idéntica en todos los estratos ($S_h = \\sqrt{p(1-p)} \\approx 0.5000 \\; \\forall h$). Por el <strong>Teorema de Cochran (1977)</strong>, cuando $S_h$ es igual entre estratos, el factor $S_h$ se cancela en $w_h^{\\text{Neyman}} = \\frac{N_h S_h}{\\sum N_k S_k} = \\frac{N_h}{N} = W_h$. La Afijación de Neyman asigna cuotas distintas a la Proporcional únicamente cuando los estratos tienen proporciones $p_h$ (y desviaciones $S_h$) <strong>diferentes entre sí</strong> ($p_1 \\ne p_2 \\ne \\dots \\ne p_H$, explorable en la <strong>Pestaña 2: Muestra Preliminar vs. Definitiva</strong>).
+        </div>`
+        : `
+        <div class="formula-equivalence-note">
+          <strong>Efecto de fijar $p = ${res.p.toFixed(2)}$ (varianza homogénea entre estratos, $S_h \\approx ${ShVal}$):</strong> Al cambiar la proporción global a $p = ${res.p.toFixed(2)}$ ($p(1-p) = ${pqVal} < 0.25$), <strong>el tamaño de muestra total se reduce</strong> a $n_0 = ${fmtMath(res.nNet)}$ ($n = ${fmtMath(res.nFinal)}$ con $\\text{TNR}$). No obstante, como este control asigna el mismo $p = ${res.p.toFixed(2)}$ a todos los estratos ($p_1 = p_2 = \\dots = p_{${res.H}} = ${res.p.toFixed(2)}$), la desviación $S_h \\approx ${ShVal}$ sigue siendo igual para todos los estratos y se sigue cancelando en $w_h^{\\text{Neyman}} = \\frac{N_h S_h}{\\sum N_k S_k} = W_h$. Para que Neyman dé un resultado distinto al de la Afijación Proporcional, cada estrato debe tener un $p_h$ diferente ($p_1 \\ne p_2 \\ne \\dots \\ne p_H$, como en la <strong>Pestaña 2</strong> con datos piloto por estrato).
         </div>`;
     } else {
       titleEl.textContent = `Muestreo Aleatorio Estratificado — Afijación Proporcional (H = ${res.H} estratos)`;
@@ -1433,7 +1440,7 @@
       headline = `<strong>Viabilidad completa (${res.H} de ${res.H} estratos):</strong> Todos los estratos cuentan con suficientes estudiantes con $\\text{Promedio} \\ge ${cTxt}$ para extraer la muestra de <strong>${formatNumber(res.nFinal)}</strong> estudiantes.`;
     } else {
       strip.className = 'gpa-viability-strip viable-warn';
-      headline = `<strong>Diagnóstico de viabilidad por estrato ($\\text{Promedio} \\ge ${cTxt}$):</strong> <strong>${viableCount} de ${res.H} estratos</strong> cubren su muestra directamente con estudiantes de $\\text{Promedio} \\ge ${cTxt}$. En los <strong>${deficitCount} estratos</strong> donde la tabla indica individuos faltantes (<strong>${formatNumber(totalDeficitUnits)}</strong> unidades en total), <strong>se aplica automáticamente la estrategia de descenso gradual</strong> (completando las muestras con estudiantes de promedio inferior a ${cTxt}$ en escalones descendentes de $0.5$ puntos) para cubrir el $100\\%$ de cada estrato.`;
+      headline = `<strong>Diagnóstico de viabilidad por estrato ($\\text{Promedio} \\ge ${cTxt}$):</strong> <strong>${viableCount} de ${res.H} estratos</strong> cubren su muestra directamente con estudiantes de $\\text{Promedio} \\ge ${cTxt}$. En los <strong>${deficitCount} estratos</strong> donde la tabla indica individuos faltantes (<strong>${formatNumber(totalDeficitUnits)}</strong> unidades en total), <strong>se aplica automáticamente la estrategia de descenso gradual</strong> (completando las muestras con estudiantes de $\\text{Promedio} < ${cTxt}$ en escalones descendentes de $0.5$ puntos) para cubrir el $100\\%$ de cada estrato.`;
     }
 
     strip.innerHTML = `
