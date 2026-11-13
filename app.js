@@ -1440,7 +1440,7 @@
       headline = `<strong>Viabilidad completa (${res.H} de ${res.H} estratos):</strong> Todos los estratos cuentan con suficientes estudiantes con $\\text{Promedio} \\ge ${cTxt}$ para extraer la muestra de <strong>${formatNumber(res.nFinal)}</strong> estudiantes.`;
     } else {
       strip.className = 'gpa-viability-strip viable-warn';
-      headline = `<strong>Diagnóstico de viabilidad por estrato ($\\text{Promedio} \\ge ${cTxt}$):</strong> <strong>${viableCount} de ${res.H} estratos</strong> cubren su muestra directamente con estudiantes de $\\text{Promedio} \\ge ${cTxt}$. En los <strong>${deficitCount} estratos</strong> donde la tabla indica individuos faltantes (<strong>${formatNumber(totalDeficitUnits)}</strong> unidades en total), <strong>se aplica automáticamente la estrategia de descenso gradual</strong> (completando las muestras con estudiantes de $\\text{Promedio} < ${cTxt}$ en escalones descendentes de $0.5$ puntos) para cubrir el $100\\%$ de cada estrato.`;
+      headline = `<strong>Diagnóstico de viabilidad por estrato ($\\text{Promedio} \\ge ${cTxt}$):</strong> <strong>${viableCount} de ${res.H} estratos</strong> cubren su muestra directamente con estudiantes de $\\text{Promedio} \\ge ${cTxt}$. En los <strong>${deficitCount} estratos</strong> donde la tabla indica individuos faltantes (<strong>${formatNumber(totalDeficitUnits)}</strong> unidades en total), <strong>se aplica automáticamente la estrategia de descenso gradual</strong> (completando las muestras con estudiantes de $\\text{Promedio} < ${cTxt}$ en escalones descendentes de 0.5 puntos) para cubrir el 100% de cada estrato.`;
     }
 
     strip.innerHTML = `
