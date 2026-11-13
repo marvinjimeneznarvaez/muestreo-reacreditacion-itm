@@ -101,7 +101,7 @@
         { id: 'nivel_agrupado', label: 'Nivel Agrupado (Tecnológico, Universitario, Posgrado)', type: 'cat' },
         { id: 'modalidad', label: 'Modalidad del Programa', type: 'cat' }
       ],
-      defaultVars: ['facultad', 'nivel_agrupado']
+      defaultVars: ['facultad', 'nivel_agrupado', 'modalidad']
     },
     custom: {
       key: 'custom',
@@ -188,7 +188,7 @@
       docentes: ['tipo_vinculacion'],
       administrativos: ['nivel_jerarquico'],
       empleadores: [],
-      graduados: ['facultad', 'nivel_agrupado'],
+      graduados: ['facultad', 'nivel_agrupado', 'modalidad'],
       custom: []
     },
 
@@ -2706,7 +2706,7 @@
     STATE.selectedVarsByEstamento.docentes = ['tipo_vinculacion'];
     STATE.selectedVarsByEstamento.administrativos = ['nivel_jerarquico'];
     STATE.selectedVarsByEstamento.empleadores = [];
-    STATE.selectedVarsByEstamento.graduados = ['facultad', 'nivel_agrupado'];
+    STATE.selectedVarsByEstamento.graduados = ['facultad', 'nivel_agrupado', 'modalidad'];
     syncModalInputsFromState();
     applyParameterizationRules();
     renderVariablesChecklist();
