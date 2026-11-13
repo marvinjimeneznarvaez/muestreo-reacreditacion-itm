@@ -2219,12 +2219,17 @@
     const piiStore = window.SIMER_ENCRYPTED_PII;
     if (!piiStore) throw new Error('No se cargaron los datos encriptados PII');
     let cipherB64 = null;
+    let effectiveKey = idRegistro;
     if (estKey === 'estudiantes') {
       const idx = parseInt(idRegistro.split('-')[1], 10) - 1;
       cipherB64 = piiStore.estudiantes ? piiStore.estudiantes[idx] : null;
     } else if (estKey === 'graduados') {
       const idx = parseInt(idRegistro.split('-')[1], 10) - 1;
       cipherB64 = piiStore.graduados ? piiStore.graduados[idx] : null;
+    } else if (estKey === 'docentes') {
+      // En docentes_data.json el id es 'DOC-REG-XXXX', pero en piiStore.docentes y en la semilla de cifrado se usó 'DOC-XXXX'
+      effectiveKey = idRegistro.replace('DOC-REG-', 'DOC-');
+      cipherB64 = piiStore.docentes ? piiStore.docentes[effectiveKey] : null;
     } else if (piiStore[estKey]) {
       cipherB64 = piiStore[estKey][idRegistro];
     }
@@ -2235,7 +2240,7 @@
     const enc = new TextEncoder();
     let counter = 0;
     while (keyStream.length < cipherBytes.length) {
-      const seedBytes = enc.encode(`${password}::${idRegistro}::${counter}`);
+      const seedBytes = enc.encode(`${password}::${effectiveKey}::${counter}`);
       const hashBlock = sha256Bytes(seedBytes);
       for (let b of hashBlock) {
         keyStream.push(b);
